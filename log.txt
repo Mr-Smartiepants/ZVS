@@ -1,0 +1,41 @@
+- Starte virtuelle Umgebung:
+    - source venv/bin/activate
+- Abhängigkeiten installieren:
+    - pip install -r requirements.txt
+- App starten:
+    - python3 app.py
+- so starten dass im LAN gehostet wird:
+    - python3 app.py host="0.0.0.0", port=5000
+- ngrok:
+    - programm im LAN starten
+    - ngrok http http://localhost:5000
+
+14.05.2025
+- Umleitung von "/" nach "/index" eingefügt
+- Benutzerverwaltung umstrukturiert:
+    - Benutzer Button in Dashboard führt zu Benutzerliste
+    - Benutzerliste mit Buttons zum entfernen der Benutzer
+    - Button zum hinzufügen eines Benutzers hierher verlegt
+- Anpassung Formular "Benutzer hinzufügen":
+    - checkbox "Admin" hinzugefügt
+    - wenn haken gesetzt erscheint passwort feld und benutzer wird als Admin mit gehashtem PW in DB eingetragen
+    - wenn kein haken gesetzt wird normaler benutzer ohne PW in DB angelegt
+- DB-Anpassung dass benutzer "null" im feld "passwort" erlaubt
+- "Zurück" Buttons an mehreren Stellen eingefügt (Benutzerliste, Benutzer hinzufügen, ...)
+- Zeitschriftenverwaltung ähnlich gestaltet wie Benutzerverwaltung
+
+15.05.2025
+- ngrok free eingerichtet um https Problem während der Entwicklung zu lösen
+- Anmeldung erfolgt nun automatisch bei der scan page
+
+22.5
+- Neuer Erkenntnis - es gibt vermutlich viele ZEitschriften nicht nur ein mal
+- der barcode wäre bei allen gleich, sodass keine eindeutige zuordnung für die rückgabe erfolgen kann
+- getrennte tabelle für exemplare und zeitschriften"typ" vielleicht sinnvoll?
+- benutzer müsste dann aber vor dem Scan auswählen ob er ausleihen oder zurückgeben möchte
+
+offen:
+- Insgesamt Scan und Formular zum hinzufügen von Zeitschriften überarbeiten
+- http zu https? ngrok for now
+- im Zeitschrift hinzufügen formular kommen irgendwie die letzten console logs an
+- Dashboard "Rahmen" (Sidepanel) könnte bleiben wenn man in Zeitschriftenverwaltung und Benutzerverwaltung geht - nur das innere Feld verändert sich

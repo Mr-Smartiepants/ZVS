@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Aktion bestätigt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md text-center">
+      <h1 class="text-2xl font-bold text-blue-600 mb-6">Aktion</h1>
+      <p
+        class="mb-6 text-lg {% if erfolg %}text-green-700{% else %}text-red-700{% endif %}"
+      >
+        {{ message }}
+      </p>
+      <a
+        href="{{ url_for('zeitschriften.scan_page', user_id=request.args.get('user_id', '')) }}"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition mr-2"
+        >Zurück zum Scanner</a
+      >
+      <a
+        href="{{ url_for('index') }}"
+        class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition"
+        >Zurück zur Startseite</a
+      >
+    </div>
+  </body>
+</html>

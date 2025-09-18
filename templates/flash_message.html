@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Nachricht</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <div class="container mt-4 text-center">
+      <div class="alert alert-warning">{{ get_flashed_messages()[0] }}</div>
+
+      <p>Du wirst in Kürze weitergeleitet...</p>
+
+      <span
+        id="redirect-url"
+        data-url="{{ redirect_url }}"
+      ></span>
+    </div>
+
+    <script>
+      setTimeout(function () {
+        let redirectUrl = document.getElementById('redirect-url');
+        if (redirectUrl) {
+          window.location.href = redirectUrl.getAttribute('data-url');
+        }
+      }, 3000); // Verzögerung auf 3 Sekunden (3000 ms)
+    </script>
+  </body>
+</html>

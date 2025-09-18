@@ -1,0 +1,77 @@
+<html lang="de">
+  <head>
+    <title>Barcodescanner</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      #reader {
+        width: 600px;
+      }
+      #result {
+        text-align: center;
+        font-size: 1.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <div class="container mx-auto mt-4">
+      {% for category, message in messages %}
+      <div
+        class="mb-2 px-4 py-2 rounded {{ 'bg-yellow-200 text-yellow-800' if category == 'warning' else 'bg-red-200 text-red-800' }}"
+      >
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+    <div class="container">
+      <!-- Hier wird der Scanner eingefügt -->
+      <div id="reader"></div>
+      <!-- Ergebnis-Anzeige -->
+      <div id="result"></div>
+      <div class="container mt-4">
+        <button
+          onclick="window.location.href='{{ url_for('zeitschriften.list_zeitschriften') if user_role == 'admin' else url_for('index') }}'"
+          class="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 transition"
+        >
+          Zurück
+        </button>
+      </div>
+    </div>
+    <script>
+      // Rolle des Benutzers aus der Flask-Route
+      const userRole = "{{ user_role }}"; // admin oder user
+
+      const scanner = new Html5QrcodeScanner('reader', {
+        qrbox: {
+          width: 250,
+          height: 250
+        },
+        fps: 20
+      });
+
+      scanner.render(success, error);
+
+      function success(result) {
+        let userId = {{ user_id if user_id else 'null' }}; // Benutzer-ID aus der Flask-Route (nur für normale Benutzer)
+        if (userRole === "admin") {
+          // Admins: Weiterleitung zur Seite für neue Zeitschrift
+          window.location.href = `/zeitschriften?barcode=${result}`;
+        } else {
+          // Normale Benutzer: Weiterleitung zur process_scan-Route
+          window.location.href = `/process_scan/${result}?user_id=${userId}`;
+        }
+      }
+
+      function error(err) {
+        console.error('Scan-Fehler:', err); // Fehler im Scanner-Prozess
+      }
+    </script>
+  </body>
+</html>

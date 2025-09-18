@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex">
+    <aside class="w-64 bg-white shadow-md h-screen hidden md:block">
+      <div class="p-6 font-bold text-xl text-blue-600 border-b">
+        Admin Dashboard
+      </div>
+      <nav class="p-4">
+        <ul class="space-y-2">
+          <li>
+            <a
+              href="/admin_dash"
+              class="block p-2 rounded hover:bg-blue-100"
+              >Dashboard</a
+            >
+          </li>
+
+          <li>
+            <a
+              href="/list_users"
+              class="block p-2 rounded bg-green-500 text-white hover:bg-green-600"
+              >Benutzerverwaltung</a
+            >
+          </li>
+
+          <li>
+            <a
+              href="/list_zeitschriften"
+              class="block p-2 rounded bg-blue-500 text-white hover:bg-blue-600"
+              >Zeitschriftenverwaltung</a
+            >
+          </li>
+
+          <li>
+            <a
+              href="/log"
+              class="block p-2 rounded hover:bg-blue-100"
+              >Aktions-Log</a
+            >
+          </li>
+          <li>
+            <a
+              href="/index"
+              class="block p-2 rounded hover:bg-blue-100 text-red-500"
+              >Logout</a
+            >
+          </li>
+        </ul>
+      </nav>
+    </aside>
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col">
+      <!-- Header -->
+      <header class="bg-white shadow p-4 flex items-center justify-between">
+        <h1 class="text-xl font-semibold text-left flex-1">Übersicht</h1>
+        <div class="text-sm text-gray-500 text-right">
+          Angemeldet als <strong>{{ vorname }} {{ name }}</strong>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Benutzeranzahl -->
+        <div class="bg-white rounded-xl shadow p-4">
+          <h2 class="font-semibold text-gray-700 mb-2">Benutzer gesamt</h2>
+          <p class="text-3xl font-bold text-blue-500">
+            {{ stats.benutzer.gesamt }}
+          </p>
+          <div class="text-sm text-gray-500">
+            Davon Admins: {{ stats.benutzer.admins }}, Nutzer: {{
+            stats.benutzer.users }}
+          </div>
+        </div>
+        <!-- Ausleihen gesamt -->
+        <div class="bg-white rounded-xl shadow p-4">
+          <h2 class="font-semibold text-gray-700 mb-2">Ausleihen insgesamt</h2>
+          <p class="text-3xl font-bold text-green-500">
+            {{ stats.gesamt_ausleihen }}
+          </p>
+        </div>
+        <!-- Aktuell ausgeliehen -->
+        <div class="bg-white rounded-xl shadow p-4">
+          <h2 class="font-semibold text-gray-700 mb-2">Aktuell ausgeliehen</h2>
+          <p class="text-3xl font-bold text-red-500">{{ stats.ausgeliehen }}</p>
+        </div>
+        <!-- Verfügbare Zeitschriften -->
+        <div class="bg-white rounded-xl shadow p-4">
+          <h2 class="font-semibold text-gray-700 mb-2">
+            Verfügbare Zeitschriften
+          </h2>
+          <p class="text-3xl font-bold text-green-600">
+            {{ stats.verfuegbar }}
+          </p>
+        </div>
+        <!-- Top 5 Ausleihen -->
+        <div class="bg-white rounded-xl shadow p-4 col-span-1 md:col-span-2">
+          <h2 class="font-semibold text-gray-700 mb-2">
+            Top 5 meist ausgeliehene Zeitschriften
+          </h2>
+          <ul class="list-disc list-inside">
+            {% for eintrag in stats.top_ausleihen %}
+            <li>{{ eintrag.titel }} ({{ eintrag.anzahl }}x ausgeliehen)</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <!-- Top 5 Benutzer -->
+        <div class="bg-white rounded-xl shadow p-4 col-span-1 md:col-span-2">
+          <h2 class="font-semibold text-gray-700 mb-2">
+            Top 5 aktive Benutzer
+          </h2>
+          <ul class="list-disc list-inside">
+            {% for benutzer in stats.top_benutzer %}
+            <li>
+              {{ benutzer.firstname }} {{ benutzer.name }} ({{ benutzer.anzahl
+              }} Ausleihen)
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Tabelle der aktuell ausgeliehenen Zeitschriften -->
+      <div class="p-4 mt-8 bg-white rounded-xl shadow">
+        <h2 class="font-semibold text-gray-700 mb-4">
+          Aktuell ausgeliehene Zeitschriften
+        </h2>
+        <table class="table-auto w-full">
+          <thead>
+            <tr class="bg-blue-100">
+              <th class="px-4 py-2">Titel</th>
+              <th class="px-4 py-2">Ausgabe</th>
+              <th class="px-4 py-2">Barcode</th>
+              <th class="px-4 py-2">Benutzer</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for z in stats.aktuell_ausgeliehen %}
+            <tr class="border-b">
+              <td class="px-4 py-2">{{ z.titel }}</td>
+              <td class="px-4 py-2">{{ z.ausgabe }}</td>
+              <td class="px-4 py-2">{{ z.barcode }}</td>
+              <td class="px-4 py-2">{{ z.firstname }} {{ z.name }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

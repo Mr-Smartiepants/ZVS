@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Erfolgreiche Registrierung</title>
+    <script>
+      // Warte 5 Sekunden und leite zur Login-Seite weiter
+      setTimeout(function () {
+        window.location.href =
+          "{{ url_for('auth.login') }}?username={{ username }}";
+      }, 5000); // 5000 Millisekunden = 5 Sekunden
+    </script>
+  </head>
+  <body>
+    <h1>Registrierung erfolgreich!</h1>
+    <p>{{ get_flashed_messages()[0] }}</p>
+    <!-- Zeigt die Flash-Nachricht an -->
+  </body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Zeitschrift löschen bestätigen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md text-center">
+      <h1 class="text-xl font-bold mb-4 text-red-600">Achtung!</h1>
+      <p class="mb-4">
+        Die Zeitschrift <strong>{{ zeitschrift.titel }}</strong> ist derzeit
+        ausgeliehen von<br />
+        <strong>{{ ausleiher.firstname }} {{ ausleiher.name }}</strong>.<br />
+        Möchten Sie sie trotzdem löschen?
+      </p>
+      <form method="POST">
+        <input
+          type="hidden"
+          name="force"
+          value="1"
+        />
+        <button
+          type="submit"
+          class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mr-2"
+        >
+          Trotzdem löschen
+        </button>
+        <a
+          href="{{ url_for('zeitschriften.list_zeitschriften') }}"
+          class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+          >Abbrechen</a
+        >
+      </form>
+    </div>
+  </body>
+</html>

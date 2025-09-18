@@ -1,0 +1,8 @@
+<h1>Wähle deinen Namen</h1>
+<div class="user-grid">
+  {% for benutzer in benutzer_liste %}
+  <button onclick="window.location.href='/scan/{{ benutzer.id }}'">
+    {{ benutzer.firstname }} {{ benutzer.name }}
+  </button>
+  {% endfor %}
+</div>

@@ -1,0 +1,46 @@
+<h1>Zeitschrift bestätigen</h1>
+<p><strong>Gefundene Zeitschrift:</strong> {{zeitschrift['titel']}}</p>
+<p>
+  <strong>Status:</strong>
+  {% if zeitschrift['benutzer_id'] is none %} Verfügbar {% else %} Ausgeliehen
+  von Benutzer-ID: {{ zeitschrift['benutzer_id']}} {% endif %}
+</p>
+
+<div class="action">
+  <form
+    method="POST"
+    action="/confirm_action"
+  >
+    <input
+      type="hidden"
+      name="zeitschrift_id"
+      value="{{zeitschrift['id']}}"
+    />
+    <input
+      type="hidden"
+      name="user_id"
+      value="{{user_id}}"
+    />
+    <button
+      type="submit"
+      name="action"
+      value="confirm"
+    >
+      Bestätigen
+    </button>
+    <button
+      type="submit"
+      name="action"
+      value="rescan"
+    >
+      Erneut scannen
+    </button>
+    <button
+      type="submit"
+      name="action"
+      value="cancel"
+    >
+      Abbrechen
+    </button>
+  </form>
+</div>

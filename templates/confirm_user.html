@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Benutzer bestätigen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
+      <h1 class="text-2xl font-bold text-center text-blue-600 mb-6">
+        Benutzer bestätigen
+      </h1>
+      <p class="text-gray-700 text-center mb-6">
+        Sind Sie <strong>{{ user.firstname }} {{ user.name }}</strong>?
+      </p>
+      <form
+        class="space-y-4"
+        action="{{ url_for('zeitschriften.scan_page', user_id=user.id) }}"
+        method="POST"
+      >
+        <button
+          type="submit"
+          class="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition"
+        >
+          Ja, das bin ich
+        </button>
+
+        <button
+          type="button"
+          onclick="window.location.href='{{ url_for('index') }}'"
+          class="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition"
+        >
+          Abbrechen
+        </button>
+      </form>
+    </div>
+  </body>
+</html>
