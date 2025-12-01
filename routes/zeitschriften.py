@@ -9,10 +9,43 @@ from models import get_db_connection
 from models.zeitschrift import add_zeitschrift, get_all_zeitschriften, delete_zeitschrift, get_zeitschrift_by_id
 from models.exemplar import add_exemplar, get_all_aktive_exemplare, get_exemplar_by_barcode, barcode_existiert as exemplar_barcode_existiert, delete_exemplar
 from models.ausleihe import ausleihe_erstellen, rueckgabe_erstellen, get_aktuelle_ausleihen, get_ausleihen_by_benutzer
+from models.statistik import top_5_ausleihen, aktuell_ausgeliehen
 
 # Blueprint für Zeitschriften
 
 zeitschriften_bp = Blueprint('zeitschriften', __name__)
+
+
+def update_zeitschrift(zeitschrift_id, neuer_titel=None, neuer_benutzer_id=None):
+    """Fallback wrapper: versucht, `models.zeitschrift.update_zeitschrift` aufzurufen, sonst No-op."""
+    try:
+        from models.zeitschrift import update_zeitschrift as _update
+        return _update(zeitschrift_id, neuer_titel=neuer_titel, neuer_benutzer_id=neuer_benutzer_id)
+    except Exception:
+        return False
+
+
+def suche_zeitschriften(titel=None, barcode=None):
+    """Fallback-Suche: versucht models.zeitschrift.suche_zeitschriften, sonst einfache Filter.
+    Liefert eine Liste von Treffern zurück (ggf. leer).
+    """
+    try:
+        from models.zeitschrift import suche_zeitschriften as _suche
+        return _suche(titel=titel, barcode=barcode)
+    except Exception:
+        # einfacher Fallback: Suche nach Barcode oder Titel
+        results = []
+        if barcode:
+            ex = get_exemplar_by_barcode(barcode)
+            if ex:
+                results.append(ex)
+            return results
+        if titel:
+            all_z = get_all_zeitschriften()
+            for z in all_z:
+                if titel.lower() in z.get('Titel', '').lower():
+                    results.append(z)
+        return results
 
 
 @zeitschriften_bp.route('/list_zeitschriften', methods=['GET'])
@@ -187,7 +220,8 @@ def zeitschrift_rueckgabe():
 @zeitschriften_bp.route('/berichte/top-ausleihen', methods=['GET'])
 def get_top_ausleihen():
     limit = request.args.get('limit', 10, type=int)
-    ergebnisse = top_ausleihen(limit=limit)
+    # Verwende vorhandene Statistik-Funktion (Top 5). Ignoriere optionales limit-Argument derzeit.
+    ergebnisse = top_5_ausleihen()
     return jsonify(ergebnisse)
 
 

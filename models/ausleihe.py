@@ -8,7 +8,7 @@ from models.user import User
 
 def ausleihe_erstellen(exemplar_id, benutzer_id):
     """eine neue Ausleihe erstellen.."""
-    conn = get_sb_connection()
+    conn = get_db_connection()
     if conn:
         cursor = conn.cursor(dictionary=True)
         try:
@@ -82,7 +82,7 @@ def get_aktuelle_ausleihen():
             JOIN exemplare e ON a.ExemplarID = e.ExemplarID
             JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
             JOIN benutzer b ON a.BenutzerID = b.id
-            WHERE a.Rueckgabedtatum IS NULL
+            WHERE a.Rueckgabedatum IS NULL
             ORDER BY a.Ausleihdatum DESC
             '''
         )
@@ -109,7 +109,7 @@ def get_ausleihen_by_benutzer(benutzer_id):
             JOIN exemplare e ON a.ExemplarID = e.ExemplarID
             JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
             WHERE a.BenutzerID = %s
-            ORDER BY a.AUsleihdatum DESC 
+            ORDER BY a.Ausleihdatum DESC 
             ''', (benutzer_id,))
         ausleihen = cursor.fetchall()
         cursor.close()

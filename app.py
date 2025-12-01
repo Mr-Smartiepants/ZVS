@@ -98,8 +98,7 @@ def scan():
 app.debug = True
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
     print(f"MYSQL_HOST: {app.config.get('MYSQL_HOST')}")
     print(f"MYSQL_USER: {app.config.get('MYSQL_USER')}")
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
 

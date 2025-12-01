@@ -17,7 +17,6 @@ class User(UserMixin):
         cursor.execute("SELECT * FROM benutzer WHERE username = %s", (username,))
         user = cursor.fetchone()
         cursor.close()
-        cursor.close()
         conn.close()
 
         if user:
