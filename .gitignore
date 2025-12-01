@@ -35,7 +35,7 @@ htmlcov/
 .vscode/
 .idea/
 
-.code-workspace
-.md
+*.code-workspace
+*.md
 log.txt
 Dokumentation/
