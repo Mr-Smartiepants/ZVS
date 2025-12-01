@@ -30,7 +30,8 @@ def list_users():
         admins=admins,
         users=users,
         vorname=vorname,
-        name=name
+        name=name,
+        active_page='users'
     )
 
 @auth_bp.route('/add_user', methods=['GET', 'POST'])
@@ -52,8 +53,8 @@ def add_user():
                 User.protokolliere_aktion(current_user.id, f"hat Benutzer {firstname} {name} hinzugefügt")
             return result
 
-    return render_template('add_user.html')
 
+    return render_template('add_user.html', active_page='users')
 
 def add_admin(firstname, name, password):
     if not password:

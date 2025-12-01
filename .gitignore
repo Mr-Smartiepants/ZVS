@@ -35,4 +35,7 @@ htmlcov/
 .vscode/
 .idea/
 
-ZVS(revised).code-workspace
+.code-workspace
+.md
+log.txt
+Dokumentation/

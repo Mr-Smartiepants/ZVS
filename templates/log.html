@@ -1,96 +1,48 @@
-<!DOCTYPE html>
-<html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-    <title>Admin Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    </head>
+{% extends "base_admin.html" %}
 
-  <body class="bg-gray-100 min-h-screen flex">
-    <aside class="w-64 bg-white shadow-md h-screen hidden md:block">
-      <div class="p-6 font-bold text-xl text-blue-600 border-b">Admin Dashboard</div>
-      <nav class="p-4">
-        <ul class="space-y-2">
-          <li>
-            <a
-              href="/admin_dash"
-              class="block p-2 rounded hover:bg-blue-100"
-              >Dashboard</a
-            >
-          </li>
+{% block page_title %}Aktions-Log - Admin Panel{% endblock %}
+{% block page_header %}Aktions-Log{% endblock %}
 
-          <li>
-            <a
-              href="/list_users"
-              class="block p-2 rounded bg-green-500 text-white hover:bg-green-600"
-              >Benutzerverwaltung</a
-            >
-          </li>
-
-          <li>
-            <a
-              href="/list_zeitschriften"
-              class="block p-2 rounded bg-blue-500 text-white hover:bg-blue-600"
-              >Zeitschriftenverwaltung</a
-            >
-          </li>
-
-          <li>
-            <a
-              href="/log"
-              class="block p-2 rounded hover:bg-blue-100"
-              >Aktions-Log</a
-            >
-          </li>
-          <li>
-            <a
-              href="/index"
-              class="block p-2 rounded hover:bg-blue-100 text-red-500"
-              >Logout</a
-            >
-          </li>
-        </ul>
-      </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <div class="flex-1 flex flex-col">
-      <!-- Header -->
-      <header class="bg-white shadow p-4 flex items-center justify-between">
-        <h1 class="text-xl font-semibold">Aktions-Log</h1>
-        <div class="text-sm text-gray-500">
-          Angemeldet als <strong>{{ vorname }} {{ name }}</strong>
-        </div>
-      </header>
-
-     <body class="bg-gray-100">
-        <div class="container mx-auto p-4">
-
-            <table class="table-auto w-full bg-white shadow rounded-lg">
+{% block content %}
+<div class="bg-white rounded-xl shadow overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="table-auto w-full text-sm">
             <thead>
-                <tr>
-                    <th class="px-4 py-2">Zeitpunkt</th>
-                    <th class="px-4 py-2">Benutzer</th>
-                    <th class="px-4 py-2">Aktion</th>
+                <tr class="bg-blue-100">
+                    <th class="px-4 py-2 text-left">Zeitpunkt</th>
+                    <th class="px-4 py-2 text-left">Benutzer</th>
+                    <th class="px-4 py-2 text-left">Aktion</th>
                 </tr>
             </thead>
             <tbody>
-                {% for eintrag in aktionen %}
+                {% if aktionen %}
+                    {% for eintrag in aktionen %}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-2 font-mono text-xs">
+                            {{ eintrag.zeitpunkt.strftime('%d.%m.%Y %H:%M:%S') if eintrag.zeitpunkt else '—' }}
+                        </td>
+                        <td class="px-4 py-2">
+                            {{ eintrag.firstname }} {{ eintrag.name }}
+                        </td>
+                        <td class="px-4 py-2">
+                            {{ eintrag.aktion }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
                 <tr>
-                    <td class="border px-4 py-2">{{ eintrag.zeitpunkt.strftime('%d.%m.%Y %H:%M:%S') if eintrag.zeitpunkt else '' }}</td>
-                    <td class="border px-4 py-2">{{ eintrag.firstname }} {{ eintrag.name }}</td>
-                    <td class="border px-4 py-2">{{ eintrag.aktion }}</td>
+                    <td colspan="3" class="px-4 py-4 text-center text-gray-500">
+                        Keine Einträge vorhanden
+                    </td>
                 </tr>
-                {% endfor %}
+                {% endif %}
             </tbody>
-            </table>
-            <div class="mt-6">
-            <a href="{{ url_for('admin_dashboard') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Zurück zum Dashboard</a>
-            </div>
-        </div>
-    </body>
-</html>
+        </table>
+    </div>
+</div>
+
+<!-- Info Box -->
+<div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+    <strong>Info:</strong> Das Aktions-Log zeigt die letzten Aktionen in der Anwendung in chronologischer Reihenfolge.
+</div>
+{% endblock %}

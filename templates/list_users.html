@@ -1,180 +1,114 @@
-<!DOCTYPE html>
-<html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-    <title>Admin Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      // Funktion zur Bestätigung der Löschung
-      function confirmDelete(event, username) {
-        const confirmed = confirm(
-          `Möchten Sie den Benutzer "${username}" wirklich löschen?`
-        );
-        if (!confirmed) {
-          event.preventDefault(); // Verhindert das Absenden des Formulars
-        }
-      }
-    </script>
-  </head>
-  <body class="bg-gray-100 min-h-screen flex">
-    <aside class="w-64 bg-white shadow-md h-screen hidden md:block">
-      <div class="p-6 font-bold text-xl text-blue-600 border-b">AdminPanel</div>
-      <nav class="p-4">
-        <ul class="space-y-2">
-          <li>
-            <a
-              href="/admin_dash"
-              class="block p-2 rounded hover:bg-blue-100"
-              >Dashboard</a
-            >
-          </li>
+{% extends "base_admin.html" %}
 
-          <li>
-            <a
-              href="/list_users"
-              class="block p-2 rounded bg-green-500 text-white hover:bg-green-600"
-              >Benutzerverwaltung</a
-            >
-          </li>
+{% block page_title %}Benutzerverwaltung - Admin Panel{% endblock %}
+{% block page_header %}Benutzerverwaltung{% endblock %}
 
-          <li>
-            <a
-              href="/list_zeitschriften"
-              class="block p-2 rounded bg-blue-500 text-white hover:bg-blue-600"
-              >Zeitschriftenverwaltung</a
-            >
-          </li>
-    
-          <li>
-            <a
-              href="/log"
-              class="block p-2 rounded hover:bg-blue-100"
-              >Aktions-Log</a
-            >
-          </li>
-          <li>
-            <a
-              href="/index"
-              class="block p-2 rounded hover:bg-blue-100 text-red-500"
-              >Logout</a
-            >
-          </li>
-        </ul>
-      </nav>
-    </aside>
+{% block extra_scripts %}
+<script>
+  function confirmDelete(event, username) {
+    const confirmed = confirm(
+      `Möchten Sie den Benutzer "${username}" wirklich löschen?`
+    );
+    if (!confirmed) {
+      event.preventDefault();
+    }
+  }
+</script>
+{% endblock %}
 
-    <!-- Main Content -->
-    <div class="flex-1 flex flex-col">
-      <!-- Header -->
-      <header class="bg-white shadow p-4 flex items-center justify-between">
-        <h1 class="text-xl font-semibold">Benutzerverwaltung</h1>
-        <div class="text-sm text-gray-500">
-          Angemeldet als <strong>{{ vorname }} {{ name }}</strong>
-        </div>
-      </header>
-
-      <body class="bg-gray-100">
-        <div class="container mx-auto p-4">
-        
-        <table class="table-auto w-full bg-white shadow rounded-lg">
+{% block content %}
+<div class="bg-white rounded-xl shadow overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="table-auto w-full text-sm">
             <thead>
-            <tr>
-                <th class="px-4 py-2">ID</th>
-                <th class="px-4 py-2">Vorname</th>
-                <th class="px-4 py-2">Nachname</th>
-                <th class="px-4 py-2">Rolle</th>
-                <th class="px-4 py-2">Aktionen</th>
-            </tr>
+                <tr class="bg-blue-100">
+                    <th class="px-4 py-2 text-left">ID</th>
+                    <th class="px-4 py-2 text-left">Vorname</th>
+                    <th class="px-4 py-2 text-left">Nachname</th>
+                    <th class="px-4 py-2 text-left">Rolle</th>
+                    <th class="px-4 py-2 text-left">Aktionen</th>
+                </tr>
             </thead>
             <tbody>
-            <!-- Admins anzeigen -->
-            <tr>
-                <td
-                colspan="5"
-                class="bg-gray-200 text-center font-bold"
-                >
-                Admins
-                </td>
-            </tr>
-            {% for admin in admins %}
-            <tr>
-                <td class="border px-4 py-2">{{ admin.id }}</td>
-                <td class="border px-4 py-2">{{ admin.firstname }}</td>
-                <td class="border px-4 py-2">{{ admin.name }}</td>
-                <td class="border px-4 py-2">Admin</td>
-                <td class="border px-4 py-2">
-                <!-- Entfernen-Button mit Bestätigung -->
-                <form
-                    method="POST"
-                    action="{{ url_for('auth.remove_user') }}"
-                    class="inline"
-                >
-                    <button
-                    type="submit"
-                    name="user_id"
-                    value="{{ admin.id }}"
-                    class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                    onclick="confirmDelete(event, '{{ admin.firstname }} {{ admin.name }}')"
-                    >
-                    Entfernen
-                    </button>
-                </form>
-                </td>
-            </tr>
-            {% endfor %}
+                <!-- Admins anzeigen -->
+                {% if admins %}
+                <tr class="bg-gray-200">
+                    <td colspan="5" class="px-4 py-2 font-bold text-center">
+                        Admins
+                    </td>
+                </tr>
+                {% for admin in admins %}
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="border px-4 py-2">{{ admin.id }}</td>
+                    <td class="border px-4 py-2">{{ admin.firstname }}</td>
+                    <td class="border px-4 py-2">{{ admin.name }}</td>
+                    <td class="border px-4 py-2"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">Admin</span></td>
+                    <td class="border px-4 py-2">
+                        <form
+                            method="POST"
+                            action="{{ url_for('auth.remove_user') }}"
+                            class="inline"
+                        >
+                            <button
+                                type="submit"
+                                name="user_id"
+                                value="{{ admin.id }}"
+                                class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs"
+                                onclick="confirmDelete(event, '{{ admin.firstname }} {{ admin.name }}')"
+                            >
+                                Entfernen
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endif %}
 
-            <!-- Normale Benutzer anzeigen -->
-            <tr>
-                <td
-                colspan="5"
-                class="bg-gray-200 text-center font-bold"
-                >
-                Benutzer
-                </td>
-            </tr>
-            {% for user in users %}
-            <tr>
-                <td class="border px-4 py-2">{{ user.id }}</td>
-                <td class="border px-4 py-2">{{ user.firstname }}</td>
-                <td class="border px-4 py-2">{{ user.name }}</td>
-                <td class="border px-4 py-2">User</td>
-                <td class="border px-4 py-2">
-                <!-- Entfernen-Button mit Bestätigung -->
-                <form
-                    method="POST"
-                    action="{{ url_for('auth.remove_user') }}"
-                    class="inline"
-                >
-                    <button
-                    type="submit"
-                    name="user_id"
-                    value="{{ user.id }}"
-                    class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                    onclick="confirmDelete(event, '{{ user.firstname }} {{ user.name }}')"
-                    >
-                    Entfernen
-                    </button>
-                </form>
-                </td>
-            </tr>
-            {% endfor %}
+                <!-- Normale Benutzer anzeigen -->
+                {% if users %}
+                <tr class="bg-gray-200">
+                    <td colspan="5" class="px-4 py-2 font-bold text-center">
+                        Benutzer
+                    </td>
+                </tr>
+                {% for user in users %}
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="border px-4 py-2">{{ user.id }}</td>
+                    <td class="border px-4 py-2">{{ user.firstname }}</td>
+                    <td class="border px-4 py-2">{{ user.name }}</td>
+                    <td class="border px-4 py-2"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">User</span></td>
+                    <td class="border px-4 py-2">
+                        <form
+                            method="POST"
+                            action="{{ url_for('auth.remove_user') }}"
+                            class="inline"
+                        >
+                            <button
+                                type="submit"
+                                name="user_id"
+                                value="{{ user.id }}"
+                                class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs"
+                                onclick="confirmDelete(event, '{{ user.firstname }} {{ user.name }}')"
+                            >
+                                Entfernen
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endif %}
             </tbody>
         </table>
+    </div>
+</div>
 
-        <!-- Benutzer hinzufügen und Zurück zum Dashboard Buttons -->
-        <div class="mt-4 flex justify-between">
-            <a
-            href="{{ url_for('auth.add_user') }}"
-            class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-            >
-            Benutzer hinzufügen
-            </a>
-    
-        </div>
-        </div>
-    </body>
-</html>
+<!-- Action Buttons -->
+<div class="mt-6 flex gap-2">
+    <a
+        href="{{ url_for('auth.add_user') }}"
+        class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+    >
+        + Benutzer hinzufügen
+    </a>
+</div>
+{% endblock %}

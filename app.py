@@ -84,7 +84,8 @@ def admin_dashboard():
         'admin_dash.html',
         stats=stats,
         vorname=current_user.firstname,
-        name=current_user.name
+        name=current_user.name,
+        active_page='dashboard'
     )
 
 @app.route('/scan')

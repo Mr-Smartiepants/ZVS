@@ -6,17 +6,15 @@ from datetime import datetime
 from flask import jsonify
 from models.user import User
 
-def add_zeitschrift(titel, barcode, ausgabe, erscheinungsdatum):
+def add_zeitschrift(titel):
+    """Fügt eine neue Zeitschrift (nur Titel) hinzu."""
     conn = get_db_connection()
     if conn:
         cursor = conn.cursor()
         try:
             cursor.execute(
-                '''
-                INSERT INTO zeitschriften (titel, ausgabe, erscheinungsdatum, barcode, aktiv)
-                VALUES (%s, %s, %s, %s, 1)
-                ''',
-                (titel, ausgabe, erscheinungsdatum, barcode)
+                'INSERT INTO zeitschriften (Titel) VALUES (%s)',
+                (titel,)
             )
             conn.commit()
             return True
@@ -28,297 +26,123 @@ def add_zeitschrift(titel, barcode, ausgabe, erscheinungsdatum):
             conn.close()
     return False
 
-def get_all_zeitschriften(): 
-    # alle aktiven  Zeitschriften von Datenbank abrufen + Verfügbarkeitsstatus
-      
+def get_all_zeitschriften():
+    """Gibt alle Zeitschriften zurück."""
     conn = get_db_connection()
-
     if conn:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute('SELECT * FROM zeitschriften WHERE aktiv = 1')
+        cursor.execute('''
+            SELECT 
+                z.ZeitschriftID,
+                z.Titel,
+                COUNT(DISTINCT e.ExemplarID) as exemplar_count,
+                SUM(CASE WHEN a.Rueckgabedatum IS NULL THEN 1 ELSE 0 END) as ausgeliehen_count
+            FROM zeitschriften z
+            LEFT JOIN exemplare e ON z.ZeitschriftID = e.ZeitschriftID AND e.Aktiv = 1
+            LEFT JOIN ausleihen a ON e.ExemplarID = a.ExemplarID
+            GROUP BY z.ZeitschriftID
+        ''')
         zeitschriften = cursor.fetchall() if cursor else []
-        if zeitschriften is None:
-            zeitschriften = []
-
-        # Verfügbarkeitsstatus hinzufügen
-        for zeitschrift in zeitschriften:
-            if zeitschrift['benutzer_id'] is None:
-                zeitschrift['verfuegbar'] = True
-            else:
-                zeitschrift['verfuegbar'] = False
-
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        cursor.close()
+        conn.close()
         return zeitschriften
-    return [] # Leere Liste ausgeben wenn keine Verbindung zur DB hergestellt werden konnte
+    return []
 
-def update_zeitschrift(zeitschrift_id, neuer_titel=None, neue_ausgabe=None, neues_erscheinungsdatum=None, neuer_benutzer_id=None):
+def get_zeitschrift_by_id(zeitschrift_id):
+    """Holt eine Zeitschrift mit allen zugehörigen Exemplaren."""
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('''
+            SELECT 
+                z.ZeitschriftID,
+                z.Titel
+            FROM zeitschriften z
+            WHERE z.ZeitschriftID = %s
+        ''', (zeitschrift_id,))
+        zeitschrift = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return zeitschrift
+    return None
+
+def delete_zeitschrift(zeitschrift_id):
+    """Löscht eine Zeitschrift (und alle zugehörigen Exemplare)."""
     conn = get_db_connection()
     if conn:
         cursor = conn.cursor()
         try:
-            sql_parts = []
-            values = []
-
-            if neuer_titel is not None:
-                sql_parts.append("titel = %s")
-                values.append(neuer_titel)
-            if neue_ausgabe is not None:
-                sql_parts.append("ausgabe = %s")
-                values.append(neue_ausgabe)
-            if neues_erscheinungsdatum is not None:
-                sql_parts.append("erscheinungsdatum = %s")
-                values.append(neues_erscheinungsdatum)
-            if neuer_benutzer_id is not None:
-                sql_parts.append("benutzer_id = %s")
-                values.append(neuer_benutzer_id)
-            else:
-                sql_parts.append("benutzer_id = NULL")
-
-            if sql_parts:
-                values.append(zeitschrift_id)
-                sql_query = "UPDATE zeitschriften SET " + ", ".join(sql_parts) + " WHERE id = %s"
-                cursor.execute(sql_query, values)
-                conn.commit()
-                if cursor.rowcount == 0:
-                    return False
-                return True
-            else:
-                return False
+            # Zuerst alle Exemplare dieser Zeitschrift inaktiv setzen
+            cursor.execute(
+                'UPDATE exemplare SET Aktiv = 0 WHERE ZeitschriftID = %s',
+                (zeitschrift_id,)
+            )
+            # Dann die Zeitschrift löschen
+            cursor.execute(
+                'DELETE FROM zeitschriften WHERE ZeitschriftID = %s',
+                (zeitschrift_id,)
+            )
+            conn.commit()
+            return True
         except mysql.connector.Error as err:
-            print(f"Fehler beim Aktualisieren der Zeitschrift: {err}")
+            print(f"Fehler beim Löschen der Zeitschrift: {err}")
             return False
         finally:
             cursor.close()
             conn.close()
     return False
 
-def delete_zeitschrift(zeitschrift_id, benutzer_id):
-    """
-    Löscht eine Zeitschrift komplett aus der Datenbank.
-    Gibt True zurück, wenn erfolgreich gelöscht, sonst False.
-    """
+def top_5_zeitschriften():
+    """Gibt die 5 am häufigsten ausgeliehenenen Zeitschriften zurück."""
     conn = get_db_connection()
-    if conn:
-        cursor = conn.cursor(dictionary=True) if conn else None
-        try:
-            # Zeitschrift-Titel holen
-            zeitschrift = None
-            if cursor:
-                cursor.execute("SELECT titel FROM zeitschriften WHERE id = %s", (zeitschrift_id,))
-                zeitschrift = cursor.fetchone()
-            if not zeitschrift:
-                if cursor:
-                    cursor.close()
-                if conn:
-                    conn.close()
-                return False  # Keine Zeitschrift gefunden
-
-            # Benutzer holen
-            user = User.get_by_id(benutzer_id)
-            if not user:
-                if cursor:
-                    cursor.close()
-                if conn:
-                    conn.close()
-                return False  # Kein Benutzer gefunden
-
-            # Zeitschrift löschen
-            if cursor:
-                cursor.execute("DELETE FROM ausleihen WHERE zeitschrift_id = %s", (zeitschrift_id,))
-                cursor.execute("DELETE FROM zeitschriften WHERE id = %s", (zeitschrift_id,))
-                if hasattr(cursor, 'rowcount') and cursor.rowcount == 0:
-                    if conn:
-                        conn.close()
-                    return False  # Nichts gelöscht
-            else:
-                if conn:
-                    conn.close()
-                return False  # Kein Cursor vorhanden
-
-            # Protokollierung entfernt
-
-            if conn:
-                conn.commit()
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close()
-            return True
-
-        except mysql.connector.Error as err:
-            print(f"Fehler beim Löschen der Zeitschrift: {err}")
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close()
-            return False
-
-    return False
-
-
-def barcode_existiert(barcode):
-    """
-    Checkt ob barcode bereits in DB vorhanden.
-    Gibt True (existiert) oder False (existiert nicht) zurück
-    """
-    conn = get_db_connection()
-
-    if conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM zeitschriften WHERE barcode = %s', (barcode,))
-        zeitschrift = cursor.fetchone()
-        cursor.close()
-        conn.close()
-
-        if zeitschrift:
-            return True
-        
-    return False
-
-def suche_zeitschriften(titel=None, barcode=None):
-    """
-    Zeitschriften anhand des Titels oder des Barcodes suchen
-    """
-    conn = get_db_connection()
-
     if conn:
         cursor = conn.cursor(dictionary=True)
-        query = 'SELECT * FROM zeitschriften WHERE aktiv = 1'
-        params = []
-
-        if titel:
-            query += ' AND titel LIKE %s'
-            params.append(f'%{titel}%')
-
-        if barcode:
-            query += ' AND barcode = %s'
-            params.append(barcode)
-
-        cursor.execute(query, tuple(params))
-        ergebnisse = cursor.fetchall()
+        cursor.execute('''
+            SELECT 
+                z.Titel,
+                COUNT(a.AusleiheID) as anzahl_ausleihen
+            FROM zeitschriften z
+            LEFT JOIN exemplare e ON z.ZeitschriftID = e.ZeitschriftID
+            LEFT JOIN ausleihen a ON e.ExemplarID = a.ExemplarID
+            GROUP BY z.ZeitschriftID
+            ORDER BY anzahl_ausleihen DESC
+            LIMIT 5
+        ''')
+        result = cursor.fetchall()
         cursor.close()
         conn.close()
-
-        return ergebnisse
-    
+        return result
     return []
 
-def top_ausleihen(limit=10):
-    """"
-    Gibt die am häufigsten ausgeliehenenen Zeitschriften zurück. Sortiert nach Anzahl der Ausleihen beginnend mit der Größten
-    """
-    try:
-        conn = get_db_connection()
-
-        if conn:
-            cursor = conn.cursor(dictionary=True)
-            query = 'SELECT zeitschrift_id, COUNT(*) AS anzahl_ausleihen FROM ausleihen GROUP BY zeitschrift_id ORDER BY anzahl_ausleihen DESC LIMIT %s;'
-            cursor.execute(query, (limit,))
-            ergebnisse = cursor.fetchall()
-            cursor.close()
-            conn.close()
-            return ergebnisse
-    except Exception as e:
-        return {"error": f"Verbindung zur Datenbank fehlgeschlagen: {str(e)}"}
-        
-def aktuell_ausgeliehen():
-    """
-    Gibt eine Liste der aktuell ausgeliehenen Zeitschriften zurück
-    """
-    try:
-        conn = get_db_connection()
-
-        if conn:
-            cursor = conn.cursor(dictionary=True)
-            query = 'SELECT zeitschrift_id, benutzer_id, ausleihdatum FROM ausleihen WHERE rueckgabedatum IS NULL ORDER BY ausleihdatum;'
-            cursor.execute(query)
-            ergebnisse = cursor.fetchall()
-            cursor.close()
-            conn.close()
-            return ergebnisse
-        else:
-            return []
-    except Exception as e:
-        return {"error": f"Fehler beim Abrufen der aktuellen Ausleihen: {str(e)}"}
-
-def zeitschrift_ausleihen_internal(zeitschrift_id, benutzer_id):
+def verfuegbare_exemplare():
+    """Gibt Anzahl verfügbarer Exemplare zurück."""
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True) if conn else None
-
-    # Zeitschrift holen
-    zeitschrift = None
-    if cursor:
-        cursor.execute('SELECT titel FROM zeitschriften WHERE id = %s', (zeitschrift_id,))
-        zeitschrift = cursor.fetchone()
-
-    # Benutzer holen
-    user = User.get_by_id(benutzer_id)
-
-    # Zeitschrift ausleihen
-    if cursor:
-        cursor.execute('UPDATE zeitschriften SET benutzer_id = %s WHERE id = %s', (benutzer_id, zeitschrift_id))
+    if conn:
+        cursor = conn.cursor()
         cursor.execute('''
-            INSERT INTO ausleihen (zeitschrift_id, benutzer_id, ausleihdatum)
-            VALUES (%s, %s, NOW())
-        ''', (zeitschrift_id, benutzer_id))
-    if conn:
-        conn.commit()
-    # Protokollierung entfernt
-    if cursor:
+            SELECT COUNT(*) as count FROM exemplare e
+            WHERE e.Aktiv = 1 
+            AND e.ExemplarID NOT IN (
+                SELECT DISTINCT ExemplarID FROM ausleihen WHERE Rueckgabedatum IS NULL
+            )
+        ''')
+        row = cursor.fetchone()
         cursor.close()
-    if conn:
         conn.close()
+        return row[0] if row else 0
+    return 0
 
-    return jsonify({
-        "message": f"{user.firstname if user else ''} {user.name if user else ''} hat '{zeitschrift['titel'] if zeitschrift else ''}' ausgeliehen."
-    }), 201
-
-
-def zeitschrift_rueckgabe_internal(zeitschrift_id, benutzer_id):
+def ausgeliehene_exemplare():
+    """Gibt Anzahl ausgeliehenener Exemplare zurück."""
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True) if conn else None
-
-    # Zeitschrift holen
-    zeitschrift = None
-    if cursor:
-        cursor.execute('SELECT titel FROM zeitschriften WHERE id = %s', (zeitschrift_id,))
-        zeitschrift = cursor.fetchone()
-
-    # Benutzer holen
-    user = User.get_by_id(benutzer_id)
-
-    # Rückgabe durchführen
-    if cursor:
-        cursor.execute('UPDATE zeitschriften SET benutzer_id = NULL WHERE id = %s', (zeitschrift_id,))
+    if conn:
+        cursor = conn.cursor()
         cursor.execute('''
-            UPDATE ausleihen
-            SET rueckgabedatum = NOW()
-            WHERE zeitschrift_id = %s AND benutzer_id = %s AND rueckgabedatum IS NULL
-        ''', (zeitschrift_id, benutzer_id))
-    if conn:
-        conn.commit()
-    # Protokollierung entfernt
-    if cursor:
+            SELECT COUNT(DISTINCT ExemplarID) as count FROM ausleihen 
+            WHERE Rueckgabedatum IS NULL
+        ''')
+        row = cursor.fetchone()
         cursor.close()
-    if conn:
         conn.close()
-
-    return jsonify({
-        "message": f"{user.firstname if user else ''} {user.name if user else ''} hat '{zeitschrift['titel'] if zeitschrift else ''}' zurückgegeben."
-    }), 200
-
-
-def get_zeitschrift_titel(zeitschrift_id):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True) if conn else None
-    zeitschrift = None
-    if cursor:
-        cursor.execute('SELECT titel FROM zeitschriften WHERE id = %s', (zeitschrift_id,))
-        zeitschrift = cursor.fetchone()
-        cursor.close()
-    if conn:
-        conn.close()
-    return zeitschrift['titel'] if zeitschrift else ''
+        return row[0] if row else 0
+    return 0

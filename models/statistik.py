@@ -1,3 +1,5 @@
+# Datenbankmodell für Statistikfunktionen
+
 import mysql.connector
 from . import get_db_connection
 from datetime import datetime
@@ -7,17 +9,20 @@ from flask import request, flash, redirect, url_for
 from flask_login import current_user, login_required
 
 
-
 def top_5_ausleihen():
+    """Top 5 am häufigsten ausgeliehenenen Zeitschriften."""
     conn = get_db_connection()
     if conn is None:
         return []
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT z.titel, COUNT(a.id) AS anzahl
+        SELECT 
+            z.Titel,
+            COUNT(a.AusleiheID) AS anzahl
         FROM ausleihen a
-        JOIN zeitschriften z ON a.zeitschrift_id = z.id
-        GROUP BY z.titel
+        JOIN exemplare e ON a.ExemplarID = e.ExemplarID
+        JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
+        GROUP BY z.ZeitschriftID
         ORDER BY anzahl DESC
         LIMIT 5
     """)
@@ -26,7 +31,9 @@ def top_5_ausleihen():
     conn.close()
     return result
 
+
 def benutzer_und_admins_zaehlen():
+    """Zählt Gesamtbenutzer, Admins und normale Benutzer."""
     conn = get_db_connection()
     if conn is None:
         return {'gesamt': 0, 'admins': 0, 'users': 0}
@@ -41,7 +48,9 @@ def benutzer_und_admins_zaehlen():
     conn.close()
     return {'gesamt': gesamt, 'admins': admins, 'users': gesamt - admins}
 
+
 def gesamt_ausleihen():
+    """Gibt Gesamtzahl aller Ausleihen zurück."""
     conn = get_db_connection()
     if conn is None:
         return 0
@@ -53,31 +62,47 @@ def gesamt_ausleihen():
     conn.close()
     return anzahl
 
+
 def aktuell_ausgeliehen():
+    """Gibt Liste der aktuell ausgeliehenenen Exemplare zurück."""
     conn = get_db_connection()
     if conn is None:
         return []
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT z.titel, z.ausgabe, z.barcode, b.firstname, b.name
-        FROM zeitschriften z
-        JOIN benutzer b ON z.benutzer_id = b.id
-        WHERE z.benutzer_id IS NOT NULL
+        SELECT 
+            z.Titel,
+            e.AusgabeHeftnummer,
+            e.Barcode,
+            b.firstname,
+            b.name,
+            a.Ausleihdatum
+        FROM ausleihen a
+        JOIN exemplare e ON a.ExemplarID = e.ExemplarID
+        JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
+        JOIN benutzer b ON a.BenutzerID = b.id
+        WHERE a.Rueckgabedatum IS NULL
+        ORDER BY a.Ausleihdatum DESC
     """)
     result = cursor.fetchall()
     cursor.close()
     conn.close()
     return result
 
+
 def top_5_benutzer():
+    """Top 5 Benutzer mit den meisten Ausleihen."""
     conn = get_db_connection()
     if conn is None:
         return []
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT b.firstname, b.name, COUNT(a.id) AS anzahl
+        SELECT 
+            b.firstname,
+            b.name,
+            COUNT(a.AusleiheID) AS anzahl
         FROM ausleihen a
-        JOIN benutzer b ON a.benutzer_id = b.id
+        JOIN benutzer b ON a.BenutzerID = b.id
         GROUP BY b.id
         ORDER BY anzahl DESC
         LIMIT 5
@@ -87,24 +112,37 @@ def top_5_benutzer():
     conn.close()
     return result
 
+
 def verfuegbare_zeitschriften():
+    """Gibt Anzahl verfügbarer (nicht ausgeliehenener) Exemplare zurück."""
     conn = get_db_connection()
     if conn is None:
         return 0
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM zeitschriften WHERE benutzer_id IS NULL AND aktiv = 1")
+    cursor.execute("""
+        SELECT COUNT(*) FROM exemplare e
+        WHERE e.Aktiv = 1
+        AND e.ExemplarID NOT IN (
+            SELECT DISTINCT ExemplarID FROM ausleihen WHERE Rueckgabedatum IS NULL
+        )
+    """)
     row = cursor.fetchone()
     anzahl = row[0] if row is not None else 0
     cursor.close()
     conn.close()
     return anzahl
 
+
 def ausgeliehene_zeitschriften():
+    """Gibt Anzahl aktuell ausgeliehenener Exemplare zurück."""
     conn = get_db_connection()
     if conn is None:
         return 0
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM zeitschriften WHERE benutzer_id IS NOT NULL AND aktiv = 1")
+    cursor.execute("""
+        SELECT COUNT(DISTINCT ExemplarID) FROM ausleihen 
+        WHERE Rueckgabedatum IS NULL
+    """)
     row = cursor.fetchone()
     anzahl = row[0] if row is not None else 0
     cursor.close()

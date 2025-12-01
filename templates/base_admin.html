@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block page_title %}Admin Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% block extra_scripts %}{% endblock %}
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-white shadow-md h-screen hidden md:block sticky top-0">
+        <div class="p-6 font-bold text-xl text-blue-600 border-b">
+            Admin Dashboard
+        </div>
+        <nav class="p-4">
+            <ul class="space-y-2">
+                <li>
+                    <a
+                        href="/admin_dash"
+                        class="block p-2 rounded hover:bg-blue-100 {% if active_page == 'dashboard' %}bg-blue-500 text-white hover:bg-blue-600{% endif %}"
+                    >Dashboard</a>
+                </li>
+                <li>
+                    <a
+                        href="/list_users"
+                        class="block p-2 rounded hover:bg-blue-100 {% if active_page == 'users' %}bg-green-500 text-white hover:bg-green-600{% endif %}"
+                    >Benutzerverwaltung</a>
+                </li>
+                <li>
+                    <a
+                        href="/list_zeitschriften"
+                        class="block p-2 rounded hover:bg-blue-100 {% if active_page == 'zeitschriften' %}bg-blue-500 text-white hover:bg-blue-600{% endif %}"
+                    >Zeitschriftenverwaltung</a>
+                </li>
+                <li>
+                    <a
+                        href="/log"
+                        class="block p-2 rounded hover:bg-blue-100 {% if active_page == 'log' %}bg-purple-500 text-white hover:bg-purple-600{% endif %}"
+                    >Aktions-Log</a>
+                </li>
+                <li>
+                    <a
+                        href="{{ url_for('index') }}"
+                        class="block p-2 rounded hover:bg-blue-100 text-red-500 hover:text-red-600"
+                    >Logout</a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col">
+        <!-- Header -->
+        <header class="bg-white shadow p-4 flex items-center justify-between sticky top-0 z-10">
+            <h1 class="text-xl font-semibold">{% block page_header %}Übersicht{% endblock %}</h1>
+            <div class="text-sm text-gray-500">
+                Angemeldet als <strong>{{ vorname }} {{ name }}</strong>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="flex-1 p-4 overflow-auto">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% elif category == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}
+            <!-- Wird von Child-Templates überschrieben -->
+            {% endblock %}
+        </main>
+    </div>
+</body>
+</html>

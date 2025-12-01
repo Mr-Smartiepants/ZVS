@@ -1,109 +1,94 @@
-<!DOCTYPE html>
-<html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-    <title>Benutzer hinzufügen</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      // Funktion zum Anzeigen/Verstecken des Passwortfelds
-      function togglePasswordField() {
-        const isAdminCheckbox = document.getElementById('is_admin');
-        const passwordField = document.getElementById('password_field');
-        if (isAdminCheckbox.checked) {
-          passwordField.style.display = 'block';
-        } else {
-          passwordField.style.display = 'none';
-        }
-      }
-    </script>
-  </head>
-  <body class="bg-gray-100">
-    <div class="container mx-auto p-4">
-      <h1 class="text-2xl font-bold mb-4">Benutzer hinzufügen</h1>
-      <form
-        method="POST"
-        action="{{ url_for('auth.add_user') }}"
-        class="bg-white shadow rounded-lg p-6"
-      >
-        <div class="mb-4">
-          <label
-            for="firstname"
-            class="block text-gray-700 font-bold mb-2"
-            >Vorname</label
-          >
-          <input
-            type="text"
-            id="firstname"
-            name="firstname"
-            required
-            class="w-full border rounded px-3 py-2"
-          />
-        </div>
-        <div class="mb-4">
-          <label
-            for="name"
-            class="block text-gray-700 font-bold mb-2"
-            >Nachname</label
-          >
-          <input
-            type="text"
-            id="name"
-            name="name"
-            required
-            class="w-full border rounded px-3 py-2"
-          />
-        </div>
-        <div class="mb-4">
-          <label
-            for="is_admin"
-            class="inline-flex items-center"
-          >
+{% extends "base_admin.html" %}
+
+{% block page_title %}Benutzer hinzufügen - Admin Panel{% endblock %}
+{% block page_header %}Benutzer hinzufügen{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function togglePasswordField() {
+    const isAdminCheckbox = document.getElementById('is_admin');
+    const passwordField = document.getElementById('password_field');
+    if (isAdminCheckbox.checked) {
+      passwordField.style.display = 'block';
+    } else {
+      passwordField.style.display = 'none';
+    }
+  }
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-xl shadow p-6">
+    <form method="POST" action="{{ url_for('auth.add_user') }}" class="space-y-4">
+        <div>
+            <label for="firstname" class="block text-gray-700 font-bold mb-2">
+                Vorname
+            </label>
             <input
-              type="checkbox"
-              id="is_admin"
-              name="is_admin"
-              class="mr-2"
-              onclick="togglePasswordField()"
+                type="text"
+                id="firstname"
+                name="firstname"
+                required
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="z.B. Max"
             />
-            <span class="text-gray-700 font-bold">Admin</span>
-          </label>
         </div>
-        <div
-          id="password_field"
-          class="mb-4"
-          style="display: none"
-        >
-          <label
-            for="password"
-            class="block text-gray-700 font-bold mb-2"
-            >Passwort</label
-          >
-          <input
-            type="password"
-            id="password"
-            name="password"
-            class="w-full border rounded px-3 py-2"
-          />
+
+        <div>
+            <label for="name" class="block text-gray-700 font-bold mb-2">
+                Nachname
+            </label>
+            <input
+                type="text"
+                id="name"
+                name="name"
+                required
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="z.B. Müller"
+            />
         </div>
-        <div class="flex justify-between">
-          <button
-            type="submit"
-            class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          >
-            Hinzufügen
-          </button>
-          <a
-            href="{{ url_for('auth.list_users') }}"
-            class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-          >
-            Zurück
-          </a>
+
+        <div>
+            <label for="is_admin" class="inline-flex items-center cursor-pointer">
+                <input
+                    type="checkbox"
+                    id="is_admin"
+                    name="is_admin"
+                    class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                    onclick="togglePasswordField()"
+                />
+                <span class="ml-2 text-gray-700 font-bold">Als Admin hinzufügen</span>
+            </label>
         </div>
-      </form>
-    </div>
-  </body>
-</html>
+
+        <div id="password_field" class="hidden">
+            <label for="password" class="block text-gray-700 font-bold mb-2">
+                Passwort
+            </label>
+            <input
+                type="password"
+                id="password"
+                name="password"
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="Passwort für Admin"
+            />
+            <p class="text-xs text-gray-500 mt-1">Erforderlich, wenn Admin-Checkbox aktiviert ist</p>
+        </div>
+
+        <div class="flex gap-2 pt-4">
+            <button
+                type="submit"
+                class="flex-1 bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition"
+            >
+                Hinzufügen
+            </button>
+            <a
+                href="{{ url_for('auth.list_users') }}"
+                class="flex-1 bg-gray-500 text-white font-bold px-4 py-2 rounded hover:bg-gray-600 transition text-center"
+            >
+                Abbrechen
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

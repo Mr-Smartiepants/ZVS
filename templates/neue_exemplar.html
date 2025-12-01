@@ -1,0 +1,87 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Neues Exemplar - Admin Panel{% endblock %}
+{% block page_header %}Neues Exemplar hinzufügen{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-xl shadow p-6">
+    <form method="POST" action="{{ url_for('zeitschriften.neue_exemplar') }}" class="space-y-4">
+        <div>
+            <label for="zeitschrift_id" class="block text-gray-700 font-bold mb-2">
+                Zeitschrift *
+            </label>
+            <select
+                id="zeitschrift_id"
+                name="zeitschrift_id"
+                required
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+            >
+                <option value="">-- Zeitschrift wählen --</option>
+                {% for zeitschrift in zeitschriften %}
+                <option value="{{ zeitschrift.ZeitschriftID }}">
+                    {{ zeitschrift.Titel }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="barcode" class="block text-gray-700 font-bold mb-2">
+                Barcode *
+            </label>
+            <input
+                type="text"
+                id="barcode"
+                name="barcode"
+                required
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="z.B. 978-3-123-45678-9"
+            />
+        </div>
+
+        <div>
+            <label for="erscheinungsdatum" class="block text-gray-700 font-bold mb-2">
+                Erscheinungsdatum
+            </label>
+            <input
+                type="date"
+                id="erscheinungsdatum"
+                name="erscheinungsdatum"
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+            />
+        </div>
+
+        <div>
+            <label for="ausgabe_heftnummer" class="block text-gray-700 font-bold mb-2">
+                Ausgabe/Heftnummer
+            </label>
+            <input
+                type="text"
+                id="ausgabe_heftnummer"
+                name="ausgabe_heftnummer"
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="z.B. Ausgabe 3/2025"
+            />
+        </div>
+
+        <p class="text-xs text-gray-500 bg-blue-50 p-3 rounded border border-blue-200">
+            <strong>Info:</strong> Mit Barcode können Exemplare beim Scannen identifiziert werden.
+        </p>
+
+        <div class="flex gap-2 pt-4">
+            <button
+                type="submit"
+                class="flex-1 bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition"
+            >
+                Exemplar hinzufügen
+            </button>
+            <a
+                href="{{ url_for('zeitschriften.list_zeitschriften') }}"
+                class="flex-1 bg-gray-500 text-white font-bold px-4 py-2 rounded hover:bg-gray-600 transition text-center"
+            >
+                Abbrechen
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

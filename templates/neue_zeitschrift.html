@@ -1,54 +1,43 @@
-<!DOCTYPE html>
-<html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-    <title>Neue Zeitschrift eintragen</title>
-  </head>
-  <body>
-    <h1>Neue Zeitschrift eintragen</h1>
+{% extends "base_admin.html" %}
 
-    <form
-      action="/zeitschriften"
-      method="POST"
-    >
-      <label for="barcode">Barcode:</label>
-      <input
-        type="text"
-        id="barcode"
-        name="barcode"
-        value="{{ barcode }}"
-        readonly
-      /><br /><br />
+{% block page_title %}Neue Zeitschrift - Admin Panel{% endblock %}
+{% block page_header %}Neue Zeitschrift hinzufügen{% endblock %}
 
-      <label for="titel">Titel:</label>
-      <input
-        type="text"
-        id="titel"
-        name="titel"
-        required
-      /><br /><br />
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-xl shadow p-6">
+    <form method="POST" action="{{ url_for('zeitschriften.neue_zeitschrift') }}" class="space-y-4">
+        <div>
+            <label for="titel" class="block text-gray-700 font-bold mb-2">
+                Titel der Zeitschrift *
+            </label>
+            <input
+                type="text"
+                id="titel"
+                name="titel"
+                required
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="z.B. Der Spiegel"
+            />
+        </div>
 
-      <label for="ausgabe">Ausgabe Nr.:</label>
-      <input
-        type="text"
-        id="ausgabe"
-        name="ausgabe"
-        required
-      /><br /><br />
+        <p class="text-xs text-gray-500">
+            * Nach dem Erstellen der Zeitschrift können Sie Exemplare (mit Barcode, Datum, etc.) hinzufügen.
+        </p>
 
-      <label for="erscheinungsdatum">Erscheinungsdatum:</label>
-      <input
-        type="date"
-        id="erscheinungsdatum"
-        name="erscheinungsdatum"
-        required
-      /><br /><br />
-
-      <button type="submit">Zeitschrift hinzufügen</button>
+        <div class="flex gap-2 pt-4">
+            <button
+                type="submit"
+                class="flex-1 bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition"
+            >
+                Zeitschrift erstellen
+            </button>
+            <a
+                href="{{ url_for('zeitschriften.list_zeitschriften') }}"
+                class="flex-1 bg-gray-500 text-white font-bold px-4 py-2 rounded hover:bg-gray-600 transition text-center"
+            >
+                Abbrechen
+            </a>
+        </div>
     </form>
-  </body>
-</html>
+</div>
+{% endblock %}
