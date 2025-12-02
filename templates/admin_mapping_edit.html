@@ -1,0 +1,23 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Mapping bearbeiten - Admin{% endblock %}
+{% block page_header %}Mapping bearbeiten{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow p-6">
+  <form method="POST">
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700">Username</label>
+      <div class="mt-1 text-sm text-gray-800">{{ username }}</div>
+    </div>
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700">Display Name</label>
+      <input name="display_name" value="{{ display_name }}" class="mt-1 block w-full border rounded px-2 py-1" />
+    </div>
+    <div class="flex gap-2">
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Speichern</button>
+      <a href="{{ url_for('auth.admin_mapping') }}" class="bg-gray-200 text-gray-800 px-4 py-2 rounded">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

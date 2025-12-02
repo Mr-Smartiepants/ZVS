@@ -22,7 +22,7 @@
                             {{ eintrag.zeitpunkt.strftime('%d.%m.%Y %H:%M:%S') if eintrag.zeitpunkt else '—' }}
                         </td>
                         <td class="px-4 py-2">
-                            {{ eintrag.firstname }} {{ eintrag.name }}
+                            {{ eintrag.display_name if eintrag.display_name else 'unbekannt' }}
                         </td>
                         <td class="px-4 py-2">
                             {{ eintrag.aktion }}

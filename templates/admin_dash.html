@@ -56,8 +56,7 @@
         <ul class="list-disc list-inside">
             {% for benutzer in stats.top_benutzer %}
             <li>
-                {{ benutzer.firstname }} {{ benutzer.name }} ({{ benutzer.anzahl
-                }} Ausleihen)
+                {{ benutzer.username }} ({{ benutzer.anzahl }} Ausleihen)
             </li>
             {% endfor %}
         </ul>
@@ -77,15 +76,21 @@
                     <th class="px-4 py-2 text-left">Ausgabe</th>
                     <th class="px-4 py-2 text-left">Barcode</th>
                     <th class="px-4 py-2 text-left">Benutzer</th>
+                            <th class="px-4 py-2 text-left">Aktion</th>
                 </tr>
             </thead>
             <tbody>
                 {% for z in stats.aktuell_ausgeliehen %}
                 <tr class="border-b hover:bg-gray-50">
-                    <td class="px-4 py-2">{{ z.titel }}</td>
-                    <td class="px-4 py-2">{{ z.ausgabe }}</td>
-                    <td class="px-4 py-2">{{ z.barcode }}</td>
-                    <td class="px-4 py-2">{{ z.firstname }} {{ z.name }}</td>
+                        <td class="px-4 py-2">{{ z.titel }}</td>
+                        <td class="px-4 py-2">{{ z.ausgabe }}</td>
+                        <td class="px-4 py-2">{{ z.barcode }}</td>
+                        <td class="px-4 py-2">{{ z.username }}</td>
+                        <td class="px-4 py-2">
+                            <form method="POST" action="{{ url_for('zeitschriften.admin_cancel_ausleihe', ausleihe_id=z.ausleihe_id) }}" style="display:inline">
+                                <button type="submit" class="bg-red-500 text-white px-3 py-1 rounded text-xs" onclick="return confirm('Ausleihe wirklich stornieren?')">Stornieren</button>
+                            </form>
+                        </td>
                 </tr>
                 {% endfor %}
             </tbody>

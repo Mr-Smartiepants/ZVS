@@ -20,9 +20,62 @@
             />
         </div>
 
-        <p class="text-xs text-gray-500">
-            * Nach dem Erstellen der Zeitschrift können Sie Exemplare (mit Barcode, Datum, etc.) hinzufügen.
-        </p>
+        <div>
+            <label for="barcode" class="block text-gray-700 font-bold mb-2">
+                Barcode (Ausgabecode)
+            </label>
+            <input
+                type="text"
+                id="barcode"
+                name="barcode"
+                value="{{ barcode or '' }}"
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="Barcode der Ausgabe"
+            />
+        </div>
+
+        <div>
+            <label for="erscheinungsdatum" class="block text-gray-700 font-bold mb-2">
+                Erscheinungsdatum
+            </label>
+            <input
+                type="date"
+                id="erscheinungsdatum"
+                name="erscheinungsdatum"
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+            />
+        </div>
+
+        <div>
+            <label for="ausgabe_heftnummer" class="block text-gray-700 font-bold mb-2">
+                Ausgabe/Heftnummer
+            </label>
+            <input
+                type="text"
+                id="ausgabe_heftnummer"
+                name="ausgabe_heftnummer"
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="z.B. Ausgabe 3/2025"
+            />
+        </div>
+
+        <div>
+            <label for="bestand" class="block text-gray-700 font-bold mb-2">
+                Anfangsbestand
+            </label>
+            <input
+                type="number"
+                min="0"
+                id="bestand"
+                name="bestand"
+                value="0"
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="z.B. 5"
+            />
+            <p class="text-xs text-gray-500 mt-1">
+                Wie viele Exemplare dieser Ausgabe sind aktuell verfügbar?
+            </p>
+        </div>
 
         <div class="flex gap-2 pt-4">
             <button

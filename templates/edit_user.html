@@ -1,0 +1,35 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Benutzer bearbeiten{% endblock %}
+{% block page_header %}Benutzer bearbeiten{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow p-6">
+  <form method="POST">
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700">Technischer Benutzername (Readonly)</label>
+      <input type="text" value="{{ user.username }}" class="mt-1 block w-full border rounded px-3 py-2 bg-gray-100" readonly />
+      <p class="text-xs text-gray-500 mt-1">Dies ist die eindeutige technische ID und kann nicht geändert werden.</p>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700">Rolle</label>
+      <select name="role" class="mt-1 block w-full border rounded px-3 py-2">
+        <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+        <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+      </select>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700">Anzeigename</label>
+      <input type="text" name="display_name" value="{{ display_name }}" class="mt-1 block w-full border rounded px-3 py-2" placeholder="z.B. Max Müller" />
+      <p class="text-xs text-gray-500 mt-1">Der Anzeigename wird sofort in der Mapping-Datei aktualisiert.</p>
+    </div>
+
+    <div class="flex gap-2">
+      <button class="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Speichern</button>
+      <a href="{{ url_for('auth.list_users') }}" class="bg-gray-200 px-4 py-2 rounded">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

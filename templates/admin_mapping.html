@@ -1,0 +1,38 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}User Mapping - Admin{% endblock %}
+{% block page_header %}User Mapping{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow overflow-hidden">
+  <div class="overflow-x-auto p-4">
+    <table class="table-auto w-full text-sm">
+      <thead>
+        <tr class="bg-blue-100">
+          <th class="px-4 py-2 text-left">Username</th>
+          <th class="px-4 py-2 text-left">Display Name</th>
+          <th class="px-4 py-2 text-left">Role</th>
+          <th class="px-4 py-2 text-left">Erstellt</th>
+          <th class="px-4 py-2 text-left">Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in mappings %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="border px-4 py-2">{{ m.username }}</td>
+          <td class="border px-4 py-2">{{ m.display_name }}</td>
+          <td class="border px-4 py-2">{{ m.role }}</td>
+          <td class="border px-4 py-2">{{ m.created_at }}</td>
+          <td class="border px-4 py-2">
+            <a href="{{ url_for('auth.admin_mapping_edit', username=m.username) }}" class="text-blue-600 mr-2">Bearbeiten</a>
+            <form method="POST" action="{{ url_for('auth.admin_mapping_delete', username=m.username) }}" style="display:inline">
+              <button type="submit" class="text-red-600" onclick="return confirm('Mapping wirklich löschen?')">Löschen</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

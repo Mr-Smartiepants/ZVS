@@ -6,9 +6,22 @@ from flask_login import login_required, current_user, login_user
 from models.user import User
 from models import get_db_connection
 
-from models.zeitschrift import add_zeitschrift, get_all_zeitschriften, delete_zeitschrift, get_zeitschrift_by_id
-from models.exemplar import add_exemplar, get_all_aktive_exemplare, get_exemplar_by_barcode, barcode_existiert as exemplar_barcode_existiert, delete_exemplar
+from models.zeitschrift import (
+    add_zeitschrift,
+    get_all_zeitschriften,
+    delete_zeitschrift,
+    get_zeitschrift_by_id,
+    barcode_existiert as zeitschrift_barcode_existiert,
+)
+from models.exemplar import (
+    add_exemplar,
+    get_all_aktive_exemplare,
+    get_exemplar_by_barcode,
+    get_exemplar_by_id,
+    delete_exemplar,
+)
 from models.ausleihe import ausleihe_erstellen, rueckgabe_erstellen, get_aktuelle_ausleihen, get_ausleihen_by_benutzer
+from models.ausleihe import cancel_ausleihe_by_id
 from models.statistik import top_5_ausleihen, aktuell_ausgeliehen
 
 # Blueprint für Zeitschriften
@@ -59,8 +72,8 @@ def list_zeitschriften():
     User.protokolliere_aktion(current_user.id, "hat Zeitschriftenliste aufgerufen")
 
     zeitschriften = get_all_zeitschriften()  # Holt alle Zeitschriften aus der Datenbank
-    vorname = current_user.firstname
-    name = current_user.name
+    vorname = current_user.username
+    name = ''
     
     return render_template(
         'list_zeitschriften.html',
@@ -78,21 +91,32 @@ def neue_zeitschrift():
         return redirect(url_for('index'))
     
     if request.method == 'GET':
-
-        # (Exemplare werden später separat hinzugefügt)
-        return render_template('neue_zeitschrift.html', active_page='zeitschriften')
+        barcode_prefill = request.args.get('barcode', '')
+        return render_template('neue_zeitschrift.html', active_page='zeitschriften', barcode=barcode_prefill)
     # POST: Neue Zeitschrift erstellen
     titel = request.form.get('titel')
+    barcode = request.form.get('barcode', '').strip() or None
+    erscheinungsdatum = request.form.get('erscheinungsdatum') or None
+    ausgabe_heftnummer = request.form.get('ausgabe_heftnummer')
+    bestand_raw = request.form.get('bestand', '0')
+    try:
+        bestand = max(int(bestand_raw), 0)
+    except ValueError:
+        bestand = 0
     
     if not titel:
         flash("Titel ist erforderlich.", "error")
         return redirect(url_for('zeitschriften.neue_zeitschrift'))
+
+    if barcode and zeitschrift_barcode_existiert(barcode):
+        flash("Barcode ist bereits vergeben.", "error")
+        return redirect(url_for('zeitschriften.neue_zeitschrift'))
     
-    erfolg = add_zeitschrift(titel)
+    erfolg = add_zeitschrift(titel, barcode, ausgabe_heftnummer, erscheinungsdatum, bestand)
     
     if erfolg:
         User.protokolliere_aktion(current_user.id, f"hat Zeitschrift '{titel}' hinzugefügt")
-        flash("Zeitschrift erfolgreich hinzugefügt. Fügen Sie jetzt Exemplare hinzu.", "success")
+        flash("Zeitschrift erfolgreich hinzugefügt.", "success")
         return redirect(url_for('zeitschriften.list_zeitschriften'))
     else:
         flash("Fehler beim Einfügen der Zeitschrift.", "error")
@@ -157,7 +181,7 @@ def benutzer_liste():
     conn = get_db_connection()
     if conn is not None:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute('SELECT id, firstname, name FROM benutzer')
+        cursor.execute('SELECT id, username FROM benutzer')
         benutzer = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -235,6 +259,22 @@ def get_aktuell_ausgeliehen():
     return jsonify(ergebnisse)
 
 
+@zeitschriften_bp.route('/admin/ausleihe/<int:ausleihe_id>/cancel', methods=['POST'])
+@login_required
+def admin_cancel_ausleihe(ausleihe_id):
+    if current_user.role != 'admin':
+        flash("Zugriff verweigert! Nur Admins dürfen diese Aktion ausführen.", "error")
+        return redirect(url_for('admin_dashboard'))
+
+    success = cancel_ausleihe_by_id(ausleihe_id)
+    if success:
+        User.protokolliere_aktion(current_user.id, f"hat Ausleihe {ausleihe_id} storniert")
+        flash('Ausleihe erfolgreich storniert (Rueckgabedatum gesetzt).', 'success')
+    else:
+        flash('Konnte Ausleihe nicht stornieren (evtl. bereits zurückgegeben).', 'warning')
+    return redirect(url_for('admin_dashboard'))
+
+
 @zeitschriften_bp.route('/scan', methods=['GET', 'POST'])
 def scan_page():
     user_id = request.args.get('user_id')
@@ -269,12 +309,12 @@ def process_scan(barcode):
     # Prüfe ob Exemplar mit diesem Barcode existiert
     exemplar = get_exemplar_by_barcode(barcode)
     
-    if exemplar:
+    if exemplar and exemplar.get('ExemplarID'):
         # Weiterleitung zur confirm_action mit exemplar_id
         return redirect(url_for('zeitschriften.confirm_action', exemplar_id=exemplar['ExemplarID'], user_id=user_id))
     else:
         # Exemplar nicht gefunden
-        flash("Barcode nicht gefunden.", "warning")
+        flash("Barcode nicht gefunden oder kein Bestand vorhanden.", "warning")
         return redirect(url_for('zeitschriften.scan_page', user_id=user_id))
 
 @zeitschriften_bp.route('/confirm_action', methods=['POST', 'GET'])
@@ -284,38 +324,41 @@ def confirm_action():
         user_id = request.form.get('user_id')
         action = request.form.get('action')
 
-        if action == 'confirm':
+        try:
+            exemplar_id_int = int(exemplar_id)
+        except (TypeError, ValueError):
+            exemplar_id_int = None
+
+        if action == 'confirm' and exemplar_id_int and user_id:
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True) if conn is not None else None
             
-            # Prüfe ob Exemplar aktuell ausgeliehen ist
+            is_offen_fuer_user = False
             if cursor:
                 cursor.execute('''
                     SELECT COUNT(*) as count FROM ausleihen 
-                    WHERE ExemplarID = %s AND Rueckgabedatum IS NULL
-                ''', (exemplar_id,))
+                    WHERE ExemplarID = %s AND BenutzerID = %s AND Rueckgabedatum IS NULL
+                ''', (exemplar_id_int, user_id))
                 result = cursor.fetchone()
-                is_ausgeliehen = result and result['count'] > 0
+                is_offen_fuer_user = result and result['count'] > 0
                 cursor.close()
             if conn:
                 conn.close()
             
             user = User.get_by_id(user_id)
-            exemplar = get_exemplar_by_barcode(exemplar_id)  # oder direkter Lookup
+            exemplar = get_exemplar_by_id(exemplar_id_int)
             erfolg = False
             message = ""
             
             if exemplar and user:
-                if not is_ausgeliehen:
-                    # Ausleihe
-                    erfolg, message = ausleihe_erstellen(exemplar_id, user_id)
-                    if erfolg:
-                        User.protokolliere_aktion(user_id, f"hat '{exemplar['Titel']}' ausgeliehen")
-                else:
-                    # Rückgabe
-                    erfolg, message = rueckgabe_erstellen(exemplar_id, user_id)
+                if is_offen_fuer_user:
+                    erfolg, message = rueckgabe_erstellen(exemplar_id_int, user_id)
                     if erfolg:
                         User.protokolliere_aktion(user_id, f"hat '{exemplar['Titel']}' zurückgegeben")
+                else:
+                    erfolg, message = ausleihe_erstellen(exemplar_id_int, user_id)
+                    if erfolg:
+                        User.protokolliere_aktion(user_id, f"hat '{exemplar['Titel']}' ausgeliehen")
             
             return render_template('aktion_bestaetigt.html', message=message, erfolg=erfolg)
     
@@ -323,16 +366,45 @@ def confirm_action():
     exemplar_id = request.args.get('exemplar_id')
     user_id = request.args.get('user_id')
     
-    exemplar = None
-    user = None
-    # TODO: Direkter Exemplar-Lookup
+    try:
+        exemplar_id_int = int(exemplar_id) if exemplar_id else None
+    except (TypeError, ValueError):
+        exemplar_id_int = None
+
+    exemplar = get_exemplar_by_id(exemplar_id_int) if exemplar_id_int else None
+    user = User.get_by_id(user_id) if user_id else None
+
+    hat_offene_ausleihe = False
+    verfuegbar = exemplar.get('Verfuegbar', 0) if exemplar else 0
+    if exemplar and user:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True) if conn is not None else None
+        if cursor:
+            cursor.execute(
+                '''
+                SELECT COUNT(*) AS count FROM ausleihen
+                WHERE ExemplarID = %s AND BenutzerID = %s AND Rueckgabedatum IS NULL
+                ''',
+                (exemplar['ExemplarID'], user.id)
+            )
+            result = cursor.fetchone()
+            hat_offene_ausleihe = result and result['count'] > 0
+            cursor.close()
+        if conn:
+            conn.close()
     
-    return render_template('confirm_action.html', exemplar=exemplar, user=user)
+    return render_template(
+        'confirm_action.html',
+        zeitschrift=exemplar,
+        user=user,
+        hat_offene_ausleihe=hat_offene_ausleihe,
+        verfuegbar=verfuegbar
+    )
 
 @zeitschriften_bp.route('/rescan/<int:user_id>', methods=['GET'])
 def rescan(user_id):
     # Direkt zur Scanner-Seite weiterleiten
-    return redirect(f'/scan/{user_id}')
+    return redirect(url_for('zeitschriften.scan_page', user_id=user_id))
 
 @zeitschriften_bp.route('/confirm_barcode', methods=['GET', 'POST'])
 def confirm_barcode():
@@ -356,24 +428,62 @@ def confirm_barcode():
 @zeitschriften_bp.route('/log')
 @login_required
 def aktionen_dashboard():
+    from models.user_mapping import get_display_name
+    
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True) if conn is not None else None
     aktionen = []
     if cursor:
         cursor.execute("""
-            SELECT a.id, a.aktion, a.zeitpunkt, b.firstname, b.name
+            SELECT a.id, a.aktion, a.zeitpunkt, b.username
             FROM aktionen a
             LEFT JOIN benutzer b ON a.benutzer_id = b.id
             ORDER BY a.zeitpunkt DESC
         """)
         aktionen = cursor.fetchall()
+        
+        # Ergänze display_name für jeden Eintrag
+        for eintrag in aktionen:
+            username = eintrag.get('username')
+            if username:
+                try:
+                    eintrag['display_name'] = get_display_name(username) or username
+                except Exception:
+                    eintrag['display_name'] = username
+            else:
+                eintrag['display_name'] = 'unbekannt'
+        
         cursor.close()
     if conn:
         conn.close()
-    vorname = current_user.firstname
-
-    name = current_user.name
+    vorname = current_user.username
+    name = ''
     return render_template('log.html', aktionen=aktionen, vorname=vorname, name=name, active_page='log')
+@zeitschriften_bp.route('/scan_exemplar', methods=['GET', 'POST'])
+@login_required
+def scan_exemplar():
+    if current_user.role != 'admin':
+        flash("Zugriff verweigert!", "error")
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        barcode = request.form.get('barcode', '').strip()
+        
+        if not barcode:
+            flash("Bitte scannen Sie einen Barcode.", "error")
+            return render_template('scan_exemplar.html', active_page='zeitschriften')
+        
+        # Prüfen ob Barcode bereits existiert
+        if zeitschrift_barcode_existiert(barcode):
+            flash(f"Barcode {barcode} existiert bereits.", "error")
+            return render_template('scan_exemplar.html', active_page='zeitschriften')
+        
+        # Weiterleitung zum Zeitschriften-Formular mit Barcode vorausgefüllt
+        return redirect(url_for('zeitschriften.neue_zeitschrift', barcode=barcode))
+    
+    return render_template('scan_exemplar.html', active_page='zeitschriften')
+
+
 @zeitschriften_bp.route('/exemplare', methods=['POST', 'GET'])
 @login_required
 def neue_exemplar():
@@ -382,30 +492,37 @@ def neue_exemplar():
         return redirect(url_for('index'))
     
     if request.method == 'GET':
-
         # Hole alle Zeitschriften zum Auswählen
         zeitschriften = get_all_zeitschriften()
         return render_template('neue_exemplar.html', zeitschriften=zeitschriften, active_page='zeitschriften')
-    # POST: Neues Exemplar erstellen
-    barcode = request.form.get('barcode')
-    erscheinungsdatum = request.form.get('erscheinungsdatum')
-    ausgabe_heftnummer = request.form.get('ausgabe_heftnummer')
+    # POST: Bestand für Zeitschrift erhöhen
     zeitschrift_id = request.form.get('zeitschrift_id')
+    anzahl_raw = request.form.get('anzahl', '0')
+
+    try:
+        anzahl = max(int(anzahl_raw), 0)
+    except ValueError:
+        anzahl = 0
     
-    if not barcode or not zeitschrift_id:
-        flash("Barcode und Zeitschrift sind erforderlich.", "error")
+    try:
+        zeitschrift_id_int = int(zeitschrift_id)
+    except (TypeError, ValueError):
+        zeitschrift_id_int = None
+    
+    if not zeitschrift_id_int:
+        flash("Bitte wählen Sie eine Zeitschrift aus.", "error")
         return redirect(url_for('zeitschriften.neue_exemplar'))
     
-    if exemplar_barcode_existiert(barcode):
-        flash(f"Barcode {barcode} existiert bereits.", "error")
+    if anzahl <= 0:
+        flash("Bitte geben Sie eine positive Anzahl an.", "error")
         return redirect(url_for('zeitschriften.neue_exemplar'))
     
-    erfolg = add_exemplar(barcode, erscheinungsdatum, ausgabe_heftnummer, zeitschrift_id)
+    erfolg = add_exemplar(zeitschrift_id_int, anzahl)
     
     if erfolg:
-        User.protokolliere_aktion(current_user.id, f"hat Exemplar {barcode} hinzugefügt")
-        flash("Exemplar erfolgreich hinzugefügt.", "success")
+        User.protokolliere_aktion(current_user.id, f"hat Bestand um {anzahl} für Zeitschrift {zeitschrift_id} erhöht")
+        flash("Bestand erfolgreich angepasst.", "success")
         return redirect(url_for('zeitschriften.list_zeitschriften'))
     else:
-        flash("Fehler beim Hinzufügen des Exemplars.", "error")
+        flash("Fehler beim Aktualisieren des Bestands.", "error")
         return redirect(url_for('zeitschriften.neue_exemplar'))

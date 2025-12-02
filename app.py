@@ -10,6 +10,7 @@ from models.user import User # User-Model importieren
 from routes.auth import auth_bp
 from datetime import timedelta
 from models.statistik import top_5_ausleihen, benutzer_und_admins_zaehlen, gesamt_ausleihen, aktuell_ausgeliehen, top_5_benutzer, verfuegbare_zeitschriften, ausgeliehene_zeitschriften
+from models.user_mapping import get_display_name
 
 load_dotenv()
 
@@ -39,17 +40,31 @@ def load_user(user_id):
 @app.route('/index')
 def index():
     benutzer_liste = User.get_all_users()  # Hole getrennte Listen für Admins und Benutzer
+    
+    # Ergänze display_name für jeden Benutzer
+    for u in benutzer_liste.get('admins', []):
+        try:
+            u['display_name'] = get_display_name(u.get('username')) or ''
+        except Exception:
+            u['display_name'] = ''
+    
+    for u in benutzer_liste.get('users', []):
+        try:
+            u['display_name'] = get_display_name(u.get('username')) or ''
+        except Exception:
+            u['display_name'] = ''
+    
     if current_user.is_authenticated:
         return render_template(
             'index.html',
-            firstname=current_user.firstname,
+            vorname=current_user.username,
             admins=benutzer_liste['admins'],
             users=benutzer_liste['users']
         )
     else:
         return render_template(
             'index.html',
-            firstname=None,
+            vorname=None,
             admins=benutzer_liste['admins'],
             users=benutzer_liste['users']
         )
@@ -83,8 +98,8 @@ def admin_dashboard():
     return render_template(
         'admin_dash.html',
         stats=stats,
-        vorname=current_user.firstname,
-        name=current_user.name,
+        vorname=current_user.username,
+        name='',
         active_page='dashboard'
     )
 
@@ -100,5 +115,5 @@ app.debug = True
 if __name__ == '__main__':
     print(f"MYSQL_HOST: {app.config.get('MYSQL_HOST')}")
     print(f"MYSQL_USER: {app.config.get('MYSQL_USER')}")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
 

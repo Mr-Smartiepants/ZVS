@@ -23,8 +23,7 @@
             <thead>
                 <tr class="bg-blue-100">
                     <th class="px-4 py-2 text-left">ID</th>
-                    <th class="px-4 py-2 text-left">Vorname</th>
-                    <th class="px-4 py-2 text-left">Nachname</th>
+                    <th class="px-4 py-2 text-left">Anzeigename</th>
                     <th class="px-4 py-2 text-left">Rolle</th>
                     <th class="px-4 py-2 text-left">Aktionen</th>
                 </tr>
@@ -33,17 +32,17 @@
                 <!-- Admins anzeigen -->
                 {% if admins %}
                 <tr class="bg-gray-200">
-                    <td colspan="5" class="px-4 py-2 font-bold text-center">
+                    <td colspan="4" class="px-4 py-2 font-bold text-center">
                         Admins
                     </td>
                 </tr>
                 {% for admin in admins %}
                 <tr class="border-b hover:bg-gray-50">
                     <td class="border px-4 py-2">{{ admin.id }}</td>
-                    <td class="border px-4 py-2">{{ admin.firstname }}</td>
-                    <td class="border px-4 py-2">{{ admin.name }}</td>
-                    <td class="border px-4 py-2"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">Admin</span></td>
-                    <td class="border px-4 py-2">
+                    <td class="border px-4 py-2">{{ admin.display_name or "" }}</td>
+                    <td class="border px-4 py-2"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">Admin</span></td>
+                    <td class="border px-4 py-2 flex gap-2">
+                        <a href="{{ url_for('auth.edit_user', user_id=admin.id) }}" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs">Bearbeiten</a>
                         <form
                             method="POST"
                             action="{{ url_for('auth.remove_user') }}"
@@ -54,7 +53,7 @@
                                 name="user_id"
                                 value="{{ admin.id }}"
                                 class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs"
-                                onclick="confirmDelete(event, '{{ admin.firstname }} {{ admin.name }}')"
+                                onclick="confirmDelete(event, '{{ admin.display_name or admin.username }}')"
                             >
                                 Entfernen
                             </button>
@@ -67,17 +66,17 @@
                 <!-- Normale Benutzer anzeigen -->
                 {% if users %}
                 <tr class="bg-gray-200">
-                    <td colspan="5" class="px-4 py-2 font-bold text-center">
+                    <td colspan="4" class="px-4 py-2 font-bold text-center">
                         Benutzer
                     </td>
                 </tr>
                 {% for user in users %}
                 <tr class="border-b hover:bg-gray-50">
                     <td class="border px-4 py-2">{{ user.id }}</td>
-                    <td class="border px-4 py-2">{{ user.firstname }}</td>
-                    <td class="border px-4 py-2">{{ user.name }}</td>
-                    <td class="border px-4 py-2"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">User</span></td>
-                    <td class="border px-4 py-2">
+                    <td class="border px-4 py-2">{{ user.display_name or "" }}</td>
+                    <td class="border px-4 py-2"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">User</span></td>
+                    <td class="border px-4 py-2 flex gap-2">
+                        <a href="{{ url_for('auth.edit_user', user_id=user.id) }}" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs">Bearbeiten</a>
                         <form
                             method="POST"
                             action="{{ url_for('auth.remove_user') }}"
@@ -88,7 +87,7 @@
                                 name="user_id"
                                 value="{{ user.id }}"
                                 class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs"
-                                onclick="confirmDelete(event, '{{ user.firstname }} {{ user.name }}')"
+                                onclick="confirmDelete(event, '{{ user.display_name or user.username }}')"
                             >
                                 Entfernen
                             </button>

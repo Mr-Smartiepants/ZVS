@@ -23,7 +23,9 @@
             <thead>
                 <tr class="bg-blue-100">
                     <th class="px-4 py-2 text-left">Titel</th>
-                    <th class="px-4 py-2 text-left">Exemplare</th>
+                    <th class="px-4 py-2 text-left">Ausgabe</th>
+                    <th class="px-4 py-2 text-left">Barcode</th>
+                    <th class="px-4 py-2 text-left">Bestand</th>
                     <th class="px-4 py-2 text-left">Verfügbar</th>
                     <th class="px-4 py-2 text-left">Ausgeliehen</th>
                     <th class="px-4 py-2 text-left">Aktionen</th>
@@ -34,10 +36,17 @@
                     {% for zeitschrift in zeitschriften %}
                     <tr class="border-b hover:bg-gray-50">
                         <td class="px-4 py-2 font-medium">{{ zeitschrift.Titel }}</td>
-                        <td class="px-4 py-2">{{ zeitschrift.exemplar_count | default(0) }}</td>
+                        <td class="px-4 py-2">
+                            <div>{{ zeitschrift.AusgabeHeftnummer or '-' }}</div>
+                            <div class="text-xs text-gray-500">
+                                {{ zeitschrift.Erscheinungsdatum or '' }}
+                            </div>
+                        </td>
+                        <td class="px-4 py-2">{{ zeitschrift.barcode or '-' }}</td>
+                        <td class="px-4 py-2">{{ zeitschrift.bestand | default(0) }}</td>
                         <td class="px-4 py-2">
                             <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                                {{ zeitschrift.exemplar_count | default(0) - zeitschrift.ausgeliehen_count | default(0) }}
+                                {{ zeitschrift.verfuegbar | default(0) }}
                             </span>
                         </td>
                         <td class="px-4 py-2">
@@ -78,15 +87,15 @@
 <div class="mt-6 flex gap-2">
     <a
         href="{{ url_for('zeitschriften.neue_zeitschrift') }}"
-        class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-    >
+                class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            >
         + Zeitschrift hinzufügen
     </a>
     <a
         href="{{ url_for('zeitschriften.neue_exemplar') }}"
         class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
     >
-        + Exemplar hinzufügen
+        + Bestand erhöhen
     </a>
 </div>
 {% endblock %}

@@ -21,31 +21,30 @@
 <div class="max-w-md mx-auto bg-white rounded-xl shadow p-6">
     <form method="POST" action="{{ url_for('auth.add_user') }}" class="space-y-4">
         <div>
-            <label for="firstname" class="block text-gray-700 font-bold mb-2">
-                Vorname
+            <label for="display_name" class="block text-gray-700 font-bold mb-2">
+                Anzeigename
             </label>
             <input
                 type="text"
-                id="firstname"
-                name="firstname"
-                required
+                id="display_name"
+                name="display_name"
                 class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                placeholder="z.B. Max"
+                placeholder="z.B. RoteRakete42"
             />
         </div>
 
         <div>
-            <label for="name" class="block text-gray-700 font-bold mb-2">
-                Nachname
+            <label for="real_name" class="block text-gray-700 font-bold mb-2">
+                Echter Name (wird nur in der CSV gespeichert)
             </label>
             <input
                 type="text"
-                id="name"
-                name="name"
-                required
+                id="real_name"
+                name="real_name"
                 class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                placeholder="z.B. Müller"
+                placeholder="Vorname Nachname"
             />
+            <p class="text-xs text-gray-500 mt-1">Der reale Name wird DSGVO-konform nur in der Mapping-Datei gespeichert.</p>
         </div>
 
         <div>

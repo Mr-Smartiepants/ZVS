@@ -2,11 +2,6 @@
 
 import mysql.connector
 from . import get_db_connection
-from datetime import datetime
-from flask import jsonify
-from models.user import User
-from flask import request, flash, redirect, url_for
-from flask_login import current_user, login_required
 
 
 def top_5_ausleihen():
@@ -71,12 +66,12 @@ def aktuell_ausgeliehen():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
         SELECT 
-            z.Titel,
-            e.AusgabeHeftnummer,
-            e.Barcode,
-            b.firstname,
-            b.name,
-            a.Ausleihdatum
+            a.AusleiheID AS ausleihe_id,
+            z.Titel AS titel,
+            z.ausgabe_heftnummer AS ausgabe,
+            z.barcode AS barcode,
+            b.username AS username,
+            a.Ausleihdatum AS ausleihdatum
         FROM ausleihen a
         JOIN exemplare e ON a.ExemplarID = e.ExemplarID
         JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
@@ -98,8 +93,7 @@ def top_5_benutzer():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
         SELECT 
-            b.firstname,
-            b.name,
+            b.username,
             COUNT(a.AusleiheID) AS anzahl
         FROM ausleihen a
         JOIN benutzer b ON a.BenutzerID = b.id
@@ -114,17 +108,15 @@ def top_5_benutzer():
 
 
 def verfuegbare_zeitschriften():
-    """Gibt Anzahl verfügbarer (nicht ausgeliehenener) Exemplare zurück."""
+    """Gibt Anzahl verfügbarer Exemplare (Summe Verfuegbar) zurück."""
     conn = get_db_connection()
     if conn is None:
         return 0
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT COUNT(*) FROM exemplare e
+        SELECT COALESCE(SUM(e.Verfuegbar), 0) FROM exemplare e
+        JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
         WHERE e.Aktiv = 1
-        AND e.ExemplarID NOT IN (
-            SELECT DISTINCT ExemplarID FROM ausleihen WHERE Rueckgabedatum IS NULL
-        )
     """)
     row = cursor.fetchone()
     anzahl = row[0] if row is not None else 0
@@ -140,8 +132,10 @@ def ausgeliehene_zeitschriften():
         return 0
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT COUNT(DISTINCT ExemplarID) FROM ausleihen 
-        WHERE Rueckgabedatum IS NULL
+        SELECT COALESCE(SUM(e.Bestand - e.Verfuegbar), 0)
+        FROM exemplare e
+        JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
+        WHERE e.Aktiv = 1
     """)
     row = cursor.fetchone()
     anzahl = row[0] if row is not None else 0

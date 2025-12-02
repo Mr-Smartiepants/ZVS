@@ -1,0 +1,49 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Barcode scannen - Admin Panel{% endblock %}
+{% block page_header %}Zeitschriften-Barcode scannen{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-xl shadow p-6">
+    <p class="text-gray-700 mb-4">
+        Scannen Sie den Barcode der Ausgabe mit Ihrem Barcode-Scanner. Das Feld sollte automatisch gefüllt werden und führt Sie zum Formular für eine neue Zeitschrift.
+    </p>
+
+    <form method="POST" action="{{ url_for('zeitschriften.scan_exemplar') }}" class="space-y-4">
+        <div>
+            <label for="barcode" class="block text-gray-700 font-bold mb-2">
+                Barcode *
+            </label>
+            <input
+                type="text"
+                id="barcode"
+                name="barcode"
+                autofocus
+                required
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500 text-lg"
+                placeholder="Barcode hier eingeben oder scannen..."
+            />
+            <p class="text-xs text-gray-500 mt-1">Der Scanner wird das Feld automatisch ausfüllen und Enter drücken.</p>
+        </div>
+
+        <div class="flex gap-2 pt-4">
+            <button
+                type="submit"
+                class="flex-1 bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition"
+            >
+                Weiter zum Zeitschriften-Formular
+            </button>
+            <a
+                href="{{ url_for('zeitschriften.list_zeitschriften') }}"
+                class="flex-1 bg-gray-500 text-white font-bold px-4 py-2 rounded hover:bg-gray-600 transition text-center"
+            >
+                Abbrechen
+            </a>
+        </div>
+    </form>
+
+        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+        <strong>Hinweis:</strong> Nach dem Scannen wird das Zeitschriften-Formular mit dem Barcode vorausgefüllt. Danach können Sie Bestand für diese Ausgabe erfassen.
+    </div>
+</div>
+{% endblock %}

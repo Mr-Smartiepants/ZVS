@@ -1,7 +1,7 @@
 {% extends "base_admin.html" %}
 
-{% block page_title %}Neues Exemplar - Admin Panel{% endblock %}
-{% block page_header %}Neues Exemplar hinzufügen{% endblock %}
+{% block page_title %}Bestand anpassen - Admin Panel{% endblock %}
+{% block page_header %}Bestand für Zeitschrift anpassen{% endblock %}
 
 {% block content %}
 <div class="max-w-md mx-auto bg-white rounded-xl shadow p-6">
@@ -26,46 +26,22 @@
         </div>
 
         <div>
-            <label for="barcode" class="block text-gray-700 font-bold mb-2">
-                Barcode *
+            <label for="anzahl" class="block text-gray-700 font-bold mb-2">
+                Anzahl hinzufügen *
             </label>
             <input
-                type="text"
-                id="barcode"
-                name="barcode"
+                type="number"
+                min="1"
+                id="anzahl"
+                name="anzahl"
                 required
                 class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                placeholder="z.B. 978-3-123-45678-9"
-            />
-        </div>
-
-        <div>
-            <label for="erscheinungsdatum" class="block text-gray-700 font-bold mb-2">
-                Erscheinungsdatum
-            </label>
-            <input
-                type="date"
-                id="erscheinungsdatum"
-                name="erscheinungsdatum"
-                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-            />
-        </div>
-
-        <div>
-            <label for="ausgabe_heftnummer" class="block text-gray-700 font-bold mb-2">
-                Ausgabe/Heftnummer
-            </label>
-            <input
-                type="text"
-                id="ausgabe_heftnummer"
-                name="ausgabe_heftnummer"
-                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                placeholder="z.B. Ausgabe 3/2025"
+                placeholder="z.B. 5"
             />
         </div>
 
         <p class="text-xs text-gray-500 bg-blue-50 p-3 rounded border border-blue-200">
-            <strong>Info:</strong> Mit Barcode können Exemplare beim Scannen identifiziert werden.
+            <strong>Info:</strong> Der Bestand erhöht sich um die angegebene Anzahl; Verfügbarkeit wird entsprechend angepasst.
         </p>
 
         <div class="flex gap-2 pt-4">
@@ -73,7 +49,7 @@
                 type="submit"
                 class="flex-1 bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition"
             >
-                Exemplar hinzufügen
+                Bestand erhöhen
             </button>
             <a
                 href="{{ url_for('zeitschriften.list_zeitschriften') }}"

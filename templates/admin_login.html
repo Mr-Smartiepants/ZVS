@@ -33,18 +33,20 @@
       >
         <div>
           <label
-            for="username"
+            for="display_name"
             class="block text-gray-700 font-semibold mb-1"
-            >Benutzername:</label
+            >Anzeigename:</label
           >
           <input
             type="text"
-            name="username"
-            id="username"
-            value="{{ request.args.get('username', '') }}"
+            name="display_name"
+            id="display_name"
+            value="{{ request.args.get('display_name', '') }}"
             required
+            placeholder="z.B. krasser_admin_3000"
             class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-400"
           />
+          <p class="text-xs text-gray-500 mt-1">Geben Sie Ihren Anzeigenamen ein (nicht den generierten Benutzernamen)</p>
         </div>
 
         <div>

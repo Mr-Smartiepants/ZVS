@@ -9,6 +9,8 @@ venv/
 env/
 .env/
 ENV/
+user_mapping.csv
+.env
 
 # Packaging / distribution
 build/
