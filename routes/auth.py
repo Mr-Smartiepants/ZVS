@@ -223,15 +223,19 @@ def confirm_user(user_id):
     if not user:
         flash("Benutzer nicht gefunden.", "error")
         return redirect(url_for('index'))
+    try:
+        display_name = get_display_name(user.username) or user.username
+    except Exception:
+        display_name = user.username
 
     if request.method == 'POST':
         # Benutzer bestätigen und einloggen
         login_user(user)
         User.protokolliere_aktion(user_id, "hat sich bestätigt und eingeloggt")
-        flash(f"Willkommen, {user.username}! Du wurdest erfolgreich eingeloggt.", "success")
+        flash(f"Willkommen, {display_name}! Du wurdest erfolgreich eingeloggt.", "success")
         return redirect(url_for('zeitschriften.scan_page', user_id=user_id))  # Weiterleitung zur Scan-Seite
 
-    return render_template('confirm_user.html', user=user)
+    return render_template('confirm_user.html', user=user, display_name=display_name)
 
 
 @auth_bp.route('/profile', methods=['GET', 'POST'])

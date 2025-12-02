@@ -113,7 +113,7 @@ def get_aktuelle_ausleihen():
                 a.Ausleihdatum AS ausleihdatum
             FROM ausleihen a
             JOIN exemplare e ON a.ExemplarID = e.ExemplarID
-            JOIN zeitschriften z ON e.ZeitschriftID = z.id
+            JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
             JOIN benutzer b ON a.BenutzerID = b.id
             WHERE a.Rueckgabedatum IS NULL
             ORDER BY a.Ausleihdatum DESC
@@ -184,7 +184,7 @@ def get_ausleihen_by_benutzer(benutzer_id):
                 a.Rueckgabedatum
             FROM ausleihen a
             JOIN exemplare e ON a.ExemplarID = e.ExemplarID
-            JOIN zeitschriften z ON e.ZeitschriftID = z.id
+            JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
             WHERE a.BenutzerID = %s
             ORDER BY a.Ausleihdatum DESC 
             ''', (benutzer_id,))

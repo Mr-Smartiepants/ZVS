@@ -12,8 +12,67 @@ def add_zeitschrift(titel, barcode=None, ausgabe_heftnummer=None, erscheinungsda
         bestand_wert = 0
     conn = get_db_connection()
     if conn:
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         try:
+            # Prüfen, ob Barcode bereits (auch inaktive) vorhanden ist
+            existing = None
+            if barcode:
+                cursor.execute(
+                    'SELECT ZeitschriftID, aktiv FROM zeitschriften WHERE barcode = %s',
+                    (barcode,)
+                )
+                existing = cursor.fetchone()
+
+            if existing:
+                # Wenn inaktiv, reaktivieren und Felder aktualisieren
+                if existing.get('aktiv', 1) == 0:
+                    zeitschrift_id = existing['ZeitschriftID']
+                    cursor.execute(
+                        '''
+                        UPDATE zeitschriften
+                        SET Titel = %s,
+                            barcode = %s,
+                            ausgabe_heftnummer = %s,
+                            erscheinungsdatum = %s,
+                            aktiv = 1
+                        WHERE ZeitschriftID = %s
+                        ''',
+                        (titel, barcode, ausgabe_heftnummer, erscheinungsdatum, zeitschrift_id)
+                    )
+                    # Bestand reaktivieren/aufstocken
+                    cursor.execute(
+                        '''
+                        SELECT ExemplarID, Bestand, Verfuegbar FROM exemplare
+                        WHERE ZeitschriftID = %s
+                        ''',
+                        (zeitschrift_id,)
+                    )
+                    row = cursor.fetchone()
+                    if row:
+                        cursor.execute(
+                            '''
+                            UPDATE exemplare
+                            SET Bestand = Bestand + %s,
+                                Verfuegbar = Verfuegbar + %s,
+                                Aktiv = 1
+                            WHERE ExemplarID = %s
+                            ''',
+                            (bestand_wert, bestand_wert, row['ExemplarID'])
+                        )
+                    else:
+                        cursor.execute(
+                            '''
+                            INSERT INTO exemplare (ZeitschriftID, Bestand, Verfuegbar, Aktiv)
+                            VALUES (%s, %s, %s, 1)
+                            ''',
+                            (zeitschrift_id, bestand_wert, bestand_wert)
+                        )
+                    conn.commit()
+                    return zeitschrift_id
+                else:
+                    # Barcode ist bereits aktiv vergeben
+                    return False
+
             cursor.execute(
                 '''
                 INSERT INTO zeitschriften (Titel, barcode, ausgabe_heftnummer, erscheinungsdatum, aktiv)
@@ -65,6 +124,34 @@ def barcode_existiert(barcode, exclude_id=None):
     return False
 
 
+def update_zeitschrift_fields(zeitschrift_id, titel, barcode=None, ausgabe_heftnummer=None, erscheinungsdatum=None):
+    """Aktualisiert Stammdaten einer Zeitschrift."""
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                '''
+                UPDATE zeitschriften
+                SET Titel = %s,
+                    barcode = %s,
+                    ausgabe_heftnummer = %s,
+                    erscheinungsdatum = %s
+                WHERE ZeitschriftID = %s
+                ''',
+                (titel, barcode, ausgabe_heftnummer, erscheinungsdatum, zeitschrift_id)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Aktualisieren der Zeitschrift: {err}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+    return False
+
+
 def get_all_zeitschriften():
     """Gibt alle aktiven Zeitschriften mit Bestands-Statistik zurück."""
     conn = get_db_connection()
@@ -82,6 +169,7 @@ def get_all_zeitschriften():
                 COALESCE(e.Bestand, 0) - COALESCE(e.Verfuegbar, 0) AS ausgeliehen_count
             FROM zeitschriften z
             LEFT JOIN exemplare e ON z.ZeitschriftID = e.ZeitschriftID AND e.Aktiv = 1
+            WHERE COALESCE(z.aktiv, 1) = 1
             ORDER BY z.Titel
         ''')
         zeitschriften = cursor.fetchall() if cursor else []
@@ -121,8 +209,23 @@ def delete_zeitschrift(zeitschrift_id):
     """Setzt Zeitschrift und Bestand inaktiv (Soft Delete)."""
     conn = get_db_connection()
     if conn:
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         try:
+            # Prüfen, ob es offene Ausleihen für Exemplare dieser Zeitschrift gibt
+            cursor.execute(
+                '''
+                SELECT COUNT(*) AS cnt
+                FROM ausleihen a
+                JOIN exemplare e ON a.ExemplarID = e.ExemplarID
+                WHERE e.ZeitschriftID = %s AND a.Rueckgabedatum IS NULL
+                ''',
+                (zeitschrift_id,)
+            )
+            row = cursor.fetchone()
+            offene = row.get('cnt', 0) if row else 0
+            if offene > 0:
+                return False
+
             cursor.execute(
                 'UPDATE exemplare SET Aktiv = 0, Verfuegbar = 0 WHERE ZeitschriftID = %s',
                 (zeitschrift_id,)

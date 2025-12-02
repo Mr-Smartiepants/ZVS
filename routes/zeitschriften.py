@@ -12,9 +12,11 @@ from models.zeitschrift import (
     delete_zeitschrift,
     get_zeitschrift_by_id,
     barcode_existiert as zeitschrift_barcode_existiert,
+    update_zeitschrift_fields,
 )
 from models.exemplar import (
     add_exemplar,
+    reduce_exemplar,
     get_all_aktive_exemplare,
     get_exemplar_by_barcode,
     get_exemplar_by_id,
@@ -23,6 +25,7 @@ from models.exemplar import (
 from models.ausleihe import ausleihe_erstellen, rueckgabe_erstellen, get_aktuelle_ausleihen, get_ausleihen_by_benutzer
 from models.ausleihe import cancel_ausleihe_by_id
 from models.statistik import top_5_ausleihen, aktuell_ausgeliehen
+from models.user_mapping import get_display_name
 
 # Blueprint für Zeitschriften
 
@@ -93,6 +96,7 @@ def neue_zeitschrift():
     if request.method == 'GET':
         barcode_prefill = request.args.get('barcode', '')
         return render_template('neue_zeitschrift.html', active_page='zeitschriften', barcode=barcode_prefill)
+
     # POST: Neue Zeitschrift erstellen
     titel = request.form.get('titel')
     barcode = request.form.get('barcode', '').strip() or None
@@ -107,6 +111,52 @@ def neue_zeitschrift():
     if not titel:
         flash("Titel ist erforderlich.", "error")
         return redirect(url_for('zeitschriften.neue_zeitschrift'))
+    
+    erfolg = add_zeitschrift(titel, barcode, ausgabe_heftnummer, erscheinungsdatum, bestand)
+    if erfolg:
+        User.protokolliere_aktion(current_user.id, f"hat Zeitschrift '{titel}' hinzugefügt")
+        flash("Zeitschrift wurde erfolgreich hinzugefügt.", "success")
+        return redirect(url_for('zeitschriften.list_zeitschriften'))
+    
+    flash("Konnte Zeitschrift nicht hinzufügen.", "error")
+    return redirect(url_for('zeitschriften.neue_zeitschrift'))
+
+# Zeitschrift bearbeiten
+@zeitschriften_bp.route('/zeitschriften/<int:zeitschrift_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_zeitschrift(zeitschrift_id):
+    if current_user.role != 'admin':
+        flash("Zugriff verweigert! Nur Admins dürfen diese Aktion ausführen.", "error")
+        return redirect(url_for('index'))
+
+    zeitschrift = get_zeitschrift_by_id(zeitschrift_id)
+    if not zeitschrift:
+        flash("Zeitschrift nicht gefunden.", "error")
+        return redirect(url_for('zeitschriften.list_zeitschriften'))
+
+    if request.method == 'POST':
+        titel = request.form.get('titel', '').strip()
+        barcode = request.form.get('barcode', '').strip() or None
+        erscheinungsdatum = request.form.get('erscheinungsdatum') or None
+        ausgabe_heftnummer = request.form.get('ausgabe_heftnummer', '').strip() or None
+
+        if not titel:
+            flash("Titel ist erforderlich.", "error")
+            return redirect(url_for('zeitschriften.edit_zeitschrift', zeitschrift_id=zeitschrift_id))
+
+        if barcode and zeitschrift_barcode_existiert(barcode, exclude_id=zeitschrift_id):
+            flash("Barcode ist bereits einer anderen Zeitschrift zugeordnet.", "error")
+            return redirect(url_for('zeitschriften.edit_zeitschrift', zeitschrift_id=zeitschrift_id))
+
+        erfolg = update_zeitschrift_fields(zeitschrift_id, titel, barcode, ausgabe_heftnummer, erscheinungsdatum)
+        if erfolg:
+            User.protokolliere_aktion(current_user.id, f"hat Zeitschrift {zeitschrift_id} bearbeitet")
+            flash("Zeitschrift aktualisiert.", "success")
+            return redirect(url_for('zeitschriften.list_zeitschriften'))
+        else:
+            flash("Konnte Zeitschrift nicht aktualisieren.", "error")
+
+    return render_template('edit_zeitschrift.html', zeitschrift=zeitschrift, active_page='zeitschriften')
 
     if barcode and zeitschrift_barcode_existiert(barcode):
         flash("Barcode ist bereits vergeben.", "error")
@@ -141,7 +191,7 @@ def zeitschrift_inaktiv_setzen(id):
             User.protokolliere_aktion(current_user.id, f"hat Zeitschrift '{zeitschrift['Titel']}' gelöscht")
             flash("Zeitschrift wurde erfolgreich entfernt.", "success")
         else:
-            flash("Fehler beim Entfernen der Zeitschrift.", "error")
+            flash("Zeitschrift konnte nicht entfernt werden (ggf. offene Ausleihen).", "error")
         return redirect(url_for('zeitschriften.list_zeitschriften'))
     
     # GET: Bestätigungsseite
@@ -185,6 +235,13 @@ def benutzer_liste():
         benutzer = cursor.fetchall()
         cursor.close()
         conn.close()
+
+        # Anzeigenamen ergänzen (fallback auf username)
+        for b in benutzer:
+            try:
+                b['display_name'] = get_display_name(b.get('username')) or b.get('username')
+            except Exception:
+                b['display_name'] = b.get('username')
 
         # Prüfen, ob der Client JSON erwartet
         if request.headers.get('Accept') == 'application/json':
@@ -329,37 +386,24 @@ def confirm_action():
         except (TypeError, ValueError):
             exemplar_id_int = None
 
-        if action == 'confirm' and exemplar_id_int and user_id:
-            conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True) if conn is not None else None
-            
-            is_offen_fuer_user = False
-            if cursor:
-                cursor.execute('''
-                    SELECT COUNT(*) as count FROM ausleihen 
-                    WHERE ExemplarID = %s AND BenutzerID = %s AND Rueckgabedatum IS NULL
-                ''', (exemplar_id_int, user_id))
-                result = cursor.fetchone()
-                is_offen_fuer_user = result and result['count'] > 0
-                cursor.close()
-            if conn:
-                conn.close()
-            
+        if exemplar_id_int and user_id:
             user = User.get_by_id(user_id)
             exemplar = get_exemplar_by_id(exemplar_id_int)
             erfolg = False
             message = ""
-            
+
             if exemplar and user:
-                if is_offen_fuer_user:
+                if action == 'rueckgabe':
                     erfolg, message = rueckgabe_erstellen(exemplar_id_int, user_id)
                     if erfolg:
                         User.protokolliere_aktion(user_id, f"hat '{exemplar['Titel']}' zurückgegeben")
-                else:
+                elif action == 'ausleihe':
                     erfolg, message = ausleihe_erstellen(exemplar_id_int, user_id)
                     if erfolg:
                         User.protokolliere_aktion(user_id, f"hat '{exemplar['Titel']}' ausgeliehen")
-            
+                else:
+                    message = "Unbekannte Aktion."
+
             return render_template('aktion_bestaetigt.html', message=message, erfolg=erfolg)
     
     # GET
@@ -373,6 +417,10 @@ def confirm_action():
 
     exemplar = get_exemplar_by_id(exemplar_id_int) if exemplar_id_int else None
     user = User.get_by_id(user_id) if user_id else None
+    try:
+        display_name = get_display_name(user.username) if user else ''
+    except Exception:
+        display_name = user.username if user else ''
 
     hat_offene_ausleihe = False
     verfuegbar = exemplar.get('Verfuegbar', 0) if exemplar else 0
@@ -397,6 +445,7 @@ def confirm_action():
         'confirm_action.html',
         zeitschrift=exemplar,
         user=user,
+        display_name=display_name,
         hat_offene_ausleihe=hat_offene_ausleihe,
         verfuegbar=verfuegbar
     )
@@ -520,9 +569,64 @@ def neue_exemplar():
     erfolg = add_exemplar(zeitschrift_id_int, anzahl)
     
     if erfolg:
-        User.protokolliere_aktion(current_user.id, f"hat Bestand um {anzahl} für Zeitschrift {zeitschrift_id} erhöht")
+        zeitschrift = get_zeitschrift_by_id(zeitschrift_id_int) or {}
+        titel_log = zeitschrift.get('Titel') or f"ID {zeitschrift_id}"
+        ausgabe_log = zeitschrift.get('AusgabeHeftnummer') or ''
+        User.protokolliere_aktion(
+            current_user.id,
+            f"hat Bestand um {anzahl} erhöht für Zeitschrift '{titel_log}' {ausgabe_log}".strip()
+        )
         flash("Bestand erfolgreich angepasst.", "success")
         return redirect(url_for('zeitschriften.list_zeitschriften'))
     else:
         flash("Fehler beim Aktualisieren des Bestands.", "error")
         return redirect(url_for('zeitschriften.neue_exemplar'))
+
+
+@zeitschriften_bp.route('/exemplare/reduce', methods=['GET', 'POST'])
+@login_required
+def reduziere_exemplar():
+    if current_user.role != 'admin':
+        flash("Zugriff verweigert!", "error")
+        return redirect(url_for('index'))
+
+    if request.method == 'GET':
+        zeitschriften = get_all_zeitschriften()
+        return render_template('reduce_exemplar.html', zeitschriften=zeitschriften, active_page='zeitschriften')
+
+    zeitschrift_id = request.form.get('zeitschrift_id')
+    anzahl_raw = request.form.get('anzahl', '0')
+
+    try:
+        anzahl = max(int(anzahl_raw), 0)
+    except ValueError:
+        anzahl = 0
+
+    try:
+        zeitschrift_id_int = int(zeitschrift_id)
+    except (TypeError, ValueError):
+        zeitschrift_id_int = None
+
+    if not zeitschrift_id_int:
+        flash("Bitte wählen Sie eine Zeitschrift aus.", "error")
+        return redirect(url_for('zeitschriften.reduziere_exemplar'))
+
+    if anzahl <= 0:
+        flash("Bitte geben Sie eine positive Anzahl an.", "error")
+        return redirect(url_for('zeitschriften.reduziere_exemplar'))
+
+    erfolg = reduce_exemplar(zeitschrift_id_int, anzahl)
+
+    if erfolg:
+        zeitschrift = get_zeitschrift_by_id(zeitschrift_id_int) or {}
+        titel_log = zeitschrift.get('Titel') or f"ID {zeitschrift_id}"
+        ausgabe_log = zeitschrift.get('AusgabeHeftnummer') or ''
+        User.protokolliere_aktion(
+            current_user.id,
+            f"hat Bestand um {anzahl} reduziert für Zeitschrift '{titel_log}' {ausgabe_log}".strip()
+        )
+        flash("Bestand erfolgreich reduziert.", "success")
+        return redirect(url_for('zeitschriften.list_zeitschriften'))
+    else:
+        flash("Fehler beim Reduzieren des Bestands (ggf. nicht genug verfügbare Exemplare).", "error")
+        return redirect(url_for('zeitschriften.reduziere_exemplar'))

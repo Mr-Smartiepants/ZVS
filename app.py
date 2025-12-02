@@ -32,6 +32,17 @@ login_manager.login_view = 'auth.login'  # Setze die Login-Seite
 
 app.permanent_session_lifetime = timedelta(minutes=5)  # Sitzungsdauer auf 5 Minuten begrenzen
 
+@app.context_processor
+def inject_display_name():
+    """Stellt current_display_name für Templates bereit (fallback: username)."""
+    display = ''
+    try:
+        if current_user.is_authenticated:
+            display = get_display_name(current_user.username) or current_user.username
+    except Exception:
+        display = getattr(current_user, 'username', '')
+    return {'current_display_name': display}
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -115,5 +126,5 @@ app.debug = True
 if __name__ == '__main__':
     print(f"MYSQL_HOST: {app.config.get('MYSQL_HOST')}")
     print(f"MYSQL_USER: {app.config.get('MYSQL_USER')}")
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
 

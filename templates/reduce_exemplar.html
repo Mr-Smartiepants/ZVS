@@ -1,0 +1,63 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Bestand reduzieren - Admin Panel{% endblock %}
+{% block page_header %}Bestand für Zeitschrift reduzieren{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-xl shadow p-6">
+    <form method="POST" action="{{ url_for('zeitschriften.reduziere_exemplar') }}" class="space-y-4">
+        <div>
+            <label for="zeitschrift_id" class="block text-gray-700 font-bold mb-2">
+                Zeitschrift *
+            </label>
+            <select
+                id="zeitschrift_id"
+                name="zeitschrift_id"
+                required
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+            >
+                <option value="">-- Zeitschrift wählen --</option>
+                {% for zeitschrift in zeitschriften %}
+                <option value="{{ zeitschrift.ZeitschriftID }}">
+                    {{ zeitschrift.Titel }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="anzahl" class="block text-gray-700 font-bold mb-2">
+                Anzahl entfernen *
+            </label>
+            <input
+                type="number"
+                min="1"
+                id="anzahl"
+                name="anzahl"
+                required
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="z.B. 2"
+            />
+        </div>
+
+        <p class="text-xs text-gray-500 bg-yellow-50 p-3 rounded border border-yellow-200">
+            <strong>Info:</strong> Es können nur verfügbare (nicht ausgeliehene) Exemplare reduziert werden. Ausgeliehene Exemplare müssen zuerst zurückgegeben werden.
+        </p>
+
+        <div class="flex gap-2 pt-4">
+            <button
+                type="submit"
+                class="flex-1 bg-red-500 text-white font-bold px-4 py-2 rounded hover:bg-red-600 transition"
+            >
+                Bestand reduzieren
+            </button>
+            <a
+                href="{{ url_for('zeitschriften.list_zeitschriften') }}"
+                class="flex-1 bg-gray-500 text-white font-bold px-4 py-2 rounded hover:bg-gray-600 transition text-center"
+            >
+                Abbrechen
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

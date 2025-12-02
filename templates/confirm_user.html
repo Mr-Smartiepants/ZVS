@@ -15,7 +15,7 @@
         Benutzer bestätigen
       </h1>
         <p class="text-gray-700 text-center mb-6">
-        Sind Sie <strong>{{ user.username }}</strong>?
+        Sind Sie <strong>{{ display_name or user.username }}</strong>?
       </p>
       <form
         class="space-y-4"

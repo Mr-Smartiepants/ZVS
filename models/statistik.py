@@ -12,7 +12,8 @@ def top_5_ausleihen():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
         SELECT 
-            z.Titel,
+            z.Titel AS titel,
+            z.ausgabe_heftnummer AS ausgabe,
             COUNT(a.AusleiheID) AS anzahl
         FROM ausleihen a
         JOIN exemplare e ON a.ExemplarID = e.ExemplarID
@@ -70,8 +71,7 @@ def aktuell_ausgeliehen():
             z.Titel AS titel,
             z.ausgabe_heftnummer AS ausgabe,
             z.barcode AS barcode,
-            b.username AS username,
-            a.Ausleihdatum AS ausleihdatum
+            b.username AS username
         FROM ausleihen a
         JOIN exemplare e ON a.ExemplarID = e.ExemplarID
         JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
@@ -79,10 +79,22 @@ def aktuell_ausgeliehen():
         WHERE a.Rueckgabedatum IS NULL
         ORDER BY a.Ausleihdatum DESC
     """)
-    result = cursor.fetchall()
+    rows = cursor.fetchall()
+    # display_name aus Mapping ergänzen
+    try:
+        from models.user_mapping import get_display_name
+        for row in rows:
+            try:
+                row['display_name'] = get_display_name(row.get('username')) or row.get('username')
+            except Exception:
+                row['display_name'] = row.get('username')
+    except Exception:
+        # wenn Mapping nicht erreichbar, einfach username belassen
+        for row in rows:
+            row['display_name'] = row.get('username')
     cursor.close()
     conn.close()
-    return result
+    return rows
 
 
 def top_5_benutzer():
@@ -101,10 +113,20 @@ def top_5_benutzer():
         ORDER BY anzahl DESC
         LIMIT 5
     """)
-    result = cursor.fetchall()
+    rows = cursor.fetchall()
+    try:
+        from models.user_mapping import get_display_name
+        for row in rows:
+            try:
+                row['display_name'] = get_display_name(row.get('username')) or row.get('username')
+            except Exception:
+                row['display_name'] = row.get('username')
+    except Exception:
+        for row in rows:
+            row['display_name'] = row.get('username')
     cursor.close()
     conn.close()
-    return result
+    return rows
 
 
 def verfuegbare_zeitschriften():
@@ -126,19 +148,14 @@ def verfuegbare_zeitschriften():
 
 
 def ausgeliehene_zeitschriften():
-    """Gibt Anzahl aktuell ausgeliehenener Exemplare zurück."""
+    """Zählt aktuell offene Ausleihen (Rueckgabedatum IS NULL)."""
     conn = get_db_connection()
     if conn is None:
         return 0
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT COALESCE(SUM(e.Bestand - e.Verfuegbar), 0)
-        FROM exemplare e
-        JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
-        WHERE e.Aktiv = 1
-    """)
+    cursor.execute("SELECT COUNT(*) FROM ausleihen WHERE Rueckgabedatum IS NULL")
     row = cursor.fetchone()
-    anzahl = row[0] if row is not None else 0
+    anzahl = row[0] if row else 0
     cursor.close()
     conn.close()
     return anzahl

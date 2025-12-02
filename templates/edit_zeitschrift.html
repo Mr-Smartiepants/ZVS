@@ -1,0 +1,81 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Zeitschrift bearbeiten - Admin Panel{% endblock %}
+{% block page_header %}Zeitschrift bearbeiten{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-xl shadow p-6">
+    <form method="POST" action="{{ url_for('zeitschriften.edit_zeitschrift', zeitschrift_id=zeitschrift.ZeitschriftID) }}" class="space-y-4">
+        <div>
+            <label for="titel" class="block text-gray-700 font-bold mb-2">
+                Titel *
+            </label>
+            <input
+                type="text"
+                id="titel"
+                name="titel"
+                required
+                value="{{ zeitschrift.Titel }}"
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="z.B. Der Spiegel"
+            />
+        </div>
+
+        <div>
+            <label for="barcode" class="block text-gray-700 font-bold mb-2">
+                Barcode (Ausgabecode)
+            </label>
+            <input
+                type="text"
+                id="barcode"
+                name="barcode"
+                value="{{ zeitschrift.barcode or '' }}"
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="Barcode der Ausgabe"
+            />
+        </div>
+
+        <div>
+            <label for="erscheinungsdatum" class="block text-gray-700 font-bold mb-2">
+                Erscheinungsdatum
+            </label>
+            <input
+                type="date"
+                id="erscheinungsdatum"
+                name="erscheinungsdatum"
+                value="{{ zeitschrift.Erscheinungsdatum or '' }}"
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+            />
+        </div>
+
+        <div>
+            <label for="ausgabe_heftnummer" class="block text-gray-700 font-bold mb-2">
+                Ausgabe/Heftnummer
+            </label>
+            <input
+                type="text"
+                id="ausgabe_heftnummer"
+                name="ausgabe_heftnummer"
+                value="{{ zeitschrift.AusgabeHeftnummer or '' }}"
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="z.B. Ausgabe 3/2025"
+            />
+        </div>
+
+        <div class="flex gap-2 pt-4">
+            <button
+                type="submit"
+                class="flex-1 bg-blue-500 text-white font-bold px-4 py-2 rounded hover:bg-blue-600 transition"
+            >
+                Speichern
+            </button>
+            <a
+                href="{{ url_for('zeitschriften.list_zeitschriften') }}"
+                class="flex-1 bg-gray-500 text-white font-bold px-4 py-2 rounded hover:bg-gray-600 transition text-center"
+            >
+                Abbrechen
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

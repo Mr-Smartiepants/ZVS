@@ -56,9 +56,17 @@
         fps: 20
       });
 
+      if (!window.isSecureContext && location.hostname !== 'localhost') {
+        alert('Kamera-Zugriff benötigt HTTPS oder localhost. Bitte Seite über HTTPS öffnen.');
+      }
+
       scanner.render(success, error);
 
       function success(result) {
+        if (!window.isSecureContext && location.hostname !== 'localhost') {
+          alert('Kamera-Zugriff benötigt HTTPS oder localhost. Bitte Seite über HTTPS öffnen.');
+          return;
+        }
         let userId = {{ user_id if user_id else 'null' }}; // Benutzer-ID aus der Flask-Route (nur für normale Benutzer)
         if (userRole === "admin") {
           // Admins: Weiterleitung zur Seite für neue Zeitschrift

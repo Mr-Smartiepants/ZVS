@@ -2,7 +2,7 @@
 <div class="user-grid">
   {% for benutzer in benutzer_liste %}
   <button onclick="window.location.href='/scan/{{ benutzer.id }}'">
-    {{ benutzer.username }}
+    {{ benutzer.display_name or benutzer.username }}
   </button>
   {% endfor %}
 </div>

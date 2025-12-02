@@ -17,46 +17,55 @@
       {% if zeitschrift and user %}
       <div class="mb-6 text-center">
         <p class="text-gray-700 mb-2">
-          <strong>{{ user.username }}</strong><br />
+          <strong>{{ display_name or user.username }}</strong><br />
           Zeitschrift: <strong>{{ zeitschrift.Titel }}</strong><br />
           Ausgabe: <strong>{{ zeitschrift.AusgabeHeftnummer or '-' }}</strong><br />
           Barcode: <strong>{{ zeitschrift.barcode or '-' }}</strong><br />
           Verfügbar: <strong>{{ verfuegbar }}</strong>
         </p>
-        {% if hat_offene_ausleihe %}
-            <p class="text-yellow-700 font-semibold mb-4">
-              Sie haben diese Zeitschrift ausgeliehen. Möchten Sie sie zurückgeben?
-            </p>
+        {% if verfuegbar > 0 %}
+          <p class="text-green-700 font-semibold mb-4">
+            Es sind Exemplare verfügbar. Ausleihen oder Rückgabe erfassen?
+          </p>
+          <div class="space-y-2">
             <form method="POST">
               <input type="hidden" name="exemplar_id" value="{{ zeitschrift.ExemplarID }}" />
               <input type="hidden" name="user_id" value="{{ user.id }}" />
-              <input type="hidden" name="action" value="confirm" />
+              <input type="hidden" name="action" value="ausleihe" />
               <button
                 type="submit"
-                class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition mb-2"
-              >
-                Zurückgeben
-              </button>
-            </form>
-        {% elif verfuegbar > 0 %}
-            <p class="text-green-700 font-semibold mb-4">
-              Diese Zeitschrift ist verfügbar. Möchten Sie sie ausleihen?
-            </p>
-            <form method="POST">
-              <input type="hidden" name="exemplar_id" value="{{ zeitschrift.ExemplarID }}" />
-              <input type="hidden" name="user_id" value="{{ user.id }}" />
-              <input type="hidden" name="action" value="confirm" />
-              <button
-                type="submit"
-                class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition mb-2"
+                class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
               >
                 Ausleihen
               </button>
             </form>
+            <form method="POST">
+              <input type="hidden" name="exemplar_id" value="{{ zeitschrift.ExemplarID }}" />
+              <input type="hidden" name="user_id" value="{{ user.id }}" />
+              <input type="hidden" name="action" value="rueckgabe" />
+              <button
+                type="submit"
+                class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
+              >
+                Rückgabe erfassen
+              </button>
+            </form>
+          </div>
         {% else %}
-            <p class="text-red-700 font-semibold mb-4">
-              Keine Exemplare verfügbar.
-            </p>
+          <p class="text-red-700 font-semibold mb-4">
+            Keine Exemplare verfügbar. Nur Rückgabe möglich.
+          </p>
+          <form method="POST">
+            <input type="hidden" name="exemplar_id" value="{{ zeitschrift.ExemplarID }}" />
+            <input type="hidden" name="user_id" value="{{ user.id }}" />
+            <input type="hidden" name="action" value="rueckgabe" />
+            <button
+              type="submit"
+              class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
+            >
+              Rückgabe erfassen
+            </button>
+          </form>
         {% endif %}
       </div>
       {% else %}

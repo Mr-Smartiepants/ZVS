@@ -22,6 +22,7 @@
         <table class="table-auto w-full text-sm">
             <thead>
                 <tr class="bg-blue-100">
+                    <th class="px-4 py-2 text-left">ID</th>
                     <th class="px-4 py-2 text-left">Titel</th>
                     <th class="px-4 py-2 text-left">Ausgabe</th>
                     <th class="px-4 py-2 text-left">Barcode</th>
@@ -35,6 +36,7 @@
                 {% if zeitschriften %}
                     {% for zeitschrift in zeitschriften %}
                     <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-2 text-xs text-gray-500">{{ zeitschrift.ZeitschriftID }}</td>
                         <td class="px-4 py-2 font-medium">{{ zeitschrift.Titel }}</td>
                         <td class="px-4 py-2">
                             <div>{{ zeitschrift.AusgabeHeftnummer or '-' }}</div>
@@ -55,6 +57,12 @@
                             </span>
                         </td>
                         <td class="px-4 py-2">
+                            <a
+                                href="{{ url_for('zeitschriften.edit_zeitschrift', zeitschrift_id=zeitschrift.ZeitschriftID) }}"
+                                class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs mr-2 inline-block"
+                            >
+                                Bearbeiten
+                            </a>
                             <form
                                 method="POST"
                                 action="{{ url_for('zeitschriften.zeitschrift_inaktiv_setzen', id=zeitschrift.ZeitschriftID) }}"
@@ -96,6 +104,12 @@
         class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
     >
         + Bestand erhöhen
+    </a>
+    <a
+        href="{{ url_for('zeitschriften.reduziere_exemplar') }}"
+        class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+    >
+        - Bestand reduzieren
     </a>
 </div>
 {% endblock %}

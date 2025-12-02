@@ -24,14 +24,23 @@
             <label for="barcode" class="block text-gray-700 font-bold mb-2">
                 Barcode (Ausgabecode)
             </label>
-            <input
-                type="text"
-                id="barcode"
-                name="barcode"
-                value="{{ barcode or '' }}"
-                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                placeholder="Barcode der Ausgabe"
-            />
+            <div class="flex gap-2">
+                <input
+                    type="text"
+                    id="barcode"
+                    name="barcode"
+                    value="{{ barcode or '' }}"
+                    class="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                    placeholder="Barcode der Ausgabe"
+                />
+                <button
+                    type="button"
+                    id="open-scanner"
+                    class="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition whitespace-nowrap"
+                >
+                    📷 Scannen
+                </button>
+            </div>
         </div>
 
         <div>
@@ -93,4 +102,100 @@
         </div>
     </form>
 </div>
+
+<!-- Barcode-Scanner Modal -->
+<div
+    id="barcode-modal"
+    class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+>
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-xl p-4">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-lg font-semibold text-gray-800">Barcode scannen</h3>
+            <button
+                type="button"
+                id="close-scanner"
+                class="text-gray-500 hover:text-gray-700"
+            >
+                ✕
+            </button>
+        </div>
+        <div id="barcode-reader" class="w-full h-72 border border-gray-200 rounded"></div>
+        <div class="mt-4 flex justify-end gap-2">
+            <button
+                type="button"
+                id="cancel-scan"
+                class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition"
+            >
+                Abbrechen
+            </button>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+{{ super() }}
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    const barcodeInput = document.getElementById('barcode');
+    const openBtn = document.getElementById('open-scanner');
+    const modal = document.getElementById('barcode-modal');
+    const cancelBtn = document.getElementById('cancel-scan');
+    const closeBtn = document.getElementById('close-scanner');
+    const readerElementId = 'barcode-reader';
+    let scanner = null; // Html5QrcodeScanner instance
+
+    function openModal() {
+        modal.classList.remove('hidden');
+        startScanner();
+    }
+
+    function closeModal() {
+        stopScanner();
+        modal.classList.add('hidden');
+    }
+
+    function startScanner() {
+        if (!window.isSecureContext && location.hostname !== 'localhost') {
+            alert('Kamera-Zugriff benötigt HTTPS oder localhost. Bitte Seite über HTTPS öffnen.');
+            closeModal();
+            return;
+        }
+        if (!window.Html5QrcodeScanner) {
+            alert('Kamera-Scanner konnte nicht geladen werden.');
+            closeModal();
+            return;
+        }
+        stopScanner();
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            rememberLastUsedCamera: true,
+        };
+        scanner = new Html5QrcodeScanner(readerElementId, config, false);
+        const onSuccess = (decodedText) => {
+            barcodeInput.value = decodedText;
+            closeModal();
+        };
+        const onError = (err) => {
+            console.debug('Scan error', err);
+        };
+        scanner.render(onSuccess, onError);
+    }
+
+    function stopScanner() {
+        if (scanner) {
+            try {
+                scanner.clear();
+            } catch (e) {
+                console.debug('Stop scanner error', e);
+            }
+            scanner = null;
+        }
+    }
+
+    openBtn?.addEventListener('click', openModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    closeBtn?.addEventListener('click', closeModal);
+</script>
+{% endblock %}
 {% endblock %}
