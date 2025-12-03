@@ -71,13 +71,14 @@ def aktuell_ausgeliehen():
             z.Titel AS titel,
             z.ausgabe_heftnummer AS ausgabe,
             z.barcode AS barcode,
-            b.username AS username
+            b.username AS username,
+            TIMESTAMPDIFF(DAY, a.Ausleihdatum, NOW()) AS tage
         FROM ausleihen a
         JOIN exemplare e ON a.ExemplarID = e.ExemplarID
         JOIN zeitschriften z ON e.ZeitschriftID = z.ZeitschriftID
         JOIN benutzer b ON a.BenutzerID = b.id
         WHERE a.Rueckgabedatum IS NULL
-        ORDER BY a.Ausleihdatum DESC
+        ORDER BY tage DESC, a.Ausleihdatum ASC
     """)
     rows = cursor.fetchall()
     # display_name aus Mapping ergänzen

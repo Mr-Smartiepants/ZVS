@@ -396,11 +396,13 @@ def confirm_action():
                 if action == 'rueckgabe':
                     erfolg, message = rueckgabe_erstellen(exemplar_id_int, user_id)
                     if erfolg:
-                        User.protokolliere_aktion(user_id, f"hat '{exemplar['Titel']}' zurückgegeben")
+                        ausgabe = exemplar.get('AusgabeHeftnummer') or ''
+                        User.protokolliere_aktion(user_id, f"hat '{exemplar['Titel']}' {ausgabe} zurückgegeben")
                 elif action == 'ausleihe':
                     erfolg, message = ausleihe_erstellen(exemplar_id_int, user_id)
                     if erfolg:
-                        User.protokolliere_aktion(user_id, f"hat '{exemplar['Titel']}' ausgeliehen")
+                        ausgabe = exemplar.get('AusgabeHeftnummer') or ''
+                        User.protokolliere_aktion(user_id, f"hat '{exemplar['Titel']}' {ausgabe} ausgeliehen")
                 else:
                     message = "Unbekannte Aktion."
 
