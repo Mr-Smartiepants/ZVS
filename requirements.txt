@@ -1,5 +1,16 @@
 bcrypt==3.2.2
+blinker==1.9.0
+cffi==2.0.0
+click==8.3.1
 Flask==3.0.2
 Flask-Login==0.6.3
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.3
 mysql-connector-python==8.0.15
+protobuf==6.33.1
+pycparser==2.23
 python-dotenv==1.0.1
+setuptools==80.9.0
+Werkzeug==3.1.4
+wheel==0.45.1
