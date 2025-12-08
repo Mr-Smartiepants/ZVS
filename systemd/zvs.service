@@ -1,0 +1,16 @@
+[Unit]
+Description=ZVS Stack (XAMPP MySQL + Flask + ngrok)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zvs-admin
+WorkingDirectory=/home/zvs-admin/ZVS/ZVS
+ExecStart=/home/zvs-admin/ZVS/ZVS/start_all.sh
+Restart=always
+RestartSec=5
+Environment=PATH=/home/zvs-admin/ZVS/ZVS/venv/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=multi-user.target
