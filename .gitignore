@@ -41,3 +41,5 @@ htmlcov/
 *.md
 log.txt
 Dokumentation/
+
+config.py
