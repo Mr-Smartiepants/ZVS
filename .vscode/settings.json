@@ -1,4 +1,5 @@
 {
   "bg3ModHelper.rootModPath": "c:\\Users\\Mr.Smartiepants\\Documents\\ZVS Git\\ZVS",
-  "bg3ModHelper.packingPriority": 0
+  "bg3ModHelper.packingPriority": 0,
+  "chatgpt.openOnStartup": true
 }
