@@ -1,10 +1,11 @@
 # Zeitschriftenverwaltungssystem (ZVS)
 
 ## Überblick
-Webanwendung zur Verwaltung und Ausleihe von Zeitschriften.
+
+Webanwendung zur Verwaltung und Ausleihe von Zeitschriften.  
 Entwickelt als Abschlussprojekt im Rahmen der Ausbildung zum Fachinformatiker für Anwendungsentwicklung.
 
-Die Anwendung ermöglicht eine einfache Verwaltung von Zeitschriftenexemplaren inklusive Benutzerzuordnung und Statusverwaltung.
+Die Anwendung ermöglicht die Verwaltung von Zeitschriften und einzelnen Exemplaren inklusive Benutzerzuordnung, Rollensteuerung und Statusverwaltung.
 
 ---
 
@@ -17,6 +18,7 @@ Die Anwendung ermöglicht eine einfache Verwaltung von Zeitschriftenexemplaren i
 - CRUD-Operationen für Zeitschriften
 - Statusverwaltung (aktiv/inaktiv)
 - Barcode-Integration
+- Statistikfunktionen
 
 ---
 
@@ -25,22 +27,21 @@ Die Anwendung ermöglicht eine einfache Verwaltung von Zeitschriftenexemplaren i
 - Python (Flask)
 - MariaDB
 - JavaScript
-- HTML / CSS
+- HTML / CSS (Jinja2 Templates)
 - Git
 
 ---
 
 ## Projektstruktur & Architektur
 
-Das Projekt ist als klassische Flask-Webanwendung aufgebaut mit klarer Trennung von Routing, Geschäftslogik und Darstellung.
+Das Projekt ist als klassische Flask-Webanwendung aufgebaut mit klarer Trennung von Routing (Controller), Geschäftslogik (Model) und Darstellung (Templates).
 
 ---
 
 ### Root-Verzeichnis
 
-```
+~~~bash
 ZVS/
-│
 ├── app.py
 ├── config.example.py
 ├── requirements.txt
@@ -52,25 +53,25 @@ ZVS/
 ├── routes/
 ├── templates/
 ├── scripts/
-├── systemd/
+└── systemd/
+~~~
 
-```
 ---
 
-### Zentrale Dateien
+## Zentrale Dateien
 
-#### `app.py`
+### `app.py`
 Einstiegspunkt der Anwendung.  
 Initialisiert Flask, registriert Blueprints und startet die Webanwendung.
 
-#### `config.example.py`
+### `config.example.py`
 Beispiel-Konfigurationsdatei für Datenbank- und Umgebungsvariablen.  
 Produktive Konfiguration erfolgt über `.env`.
 
-#### `requirements.txt`
+### `requirements.txt`
 Liste aller Python-Abhängigkeiten zur Installation via `pip`.
 
-#### `hash.py`
+### `hash.py`
 Hilfsfunktionen für sicherheitsrelevante Operationen (z. B. Passwort-Hashing).
 
 ---
@@ -79,58 +80,45 @@ Hilfsfunktionen für sicherheitsrelevante Operationen (z. B. Passwort-Hashing).
 
 ### `routes/` – HTTP-Handling & Controller
 
-Enthält die Flask-Routen und verarbeitet eingehende Requests.
-
-```
+~~~bash
 routes/
-├── init.py
+├── __init__.py
 ├── auth.py
 └── zeitschriften.py
+~~~
 
-```
-
-- **auth.py**  
-  Login-Logik, Authentifizierung und Zugriffskontrolle
-
-- **zeitschriften.py**  
-  Verarbeitung von CRUD-Operationen, Scan-Workflow, Ausleih- und Rückgabeprozessen
+- **auth.py** – Login-Logik, Authentifizierung und Zugriffskontrolle  
+- **zeitschriften.py** – CRUD-Operationen, Scan-Workflow, Ausleih- und Rückgabeprozesse  
 
 ---
 
 ### `models/` – Datenzugriff & Geschäftslogik
 
-Kapselt Datenbankoperationen und Fachlogik.
-
-```
+~~~bash
 models/
-├── init.py
+├── __init__.py
 ├── ausleihe.py
 ├── exemplar.py
 ├── statistik.py
 ├── user.py
 ├── user_mapping.py
 └── zeitschrift.py
+~~~
 
-```
-
-- **zeitschrift.py** – Verwaltung von Zeitschriften
-- **exemplar.py** – Verwaltung einzelner Exemplare
-- **ausleihe.py** – Logik für Ausleih- und Rückgabeprozesse
-- **user.py** – Benutzer- und Rollenverwaltung
-- **user_mapping.py** – Zuordnung/Import-Logik von Benutzern
-- **statistik.py** – Auswertungen und Statistiken
+- **zeitschrift.py** – Verwaltung von Zeitschriften  
+- **exemplar.py** – Verwaltung einzelner Exemplare  
+- **ausleihe.py** – Logik für Ausleih- und Rückgabeprozesse  
+- **user.py** – Benutzer- und Rollenverwaltung  
+- **user_mapping.py** – Import-/Mapping-Logik  
+- **statistik.py** – Auswertungen und Statistiken  
 
 ---
 
 ## Frontend
 
-### `templates/` – Server-side Rendering (Jinja2)
+### `templates/` – Server-Side Rendering (Jinja2)
 
-HTML-Templates zur Darstellung der Benutzeroberfläche.
-
-Beispiele:
-
-```
+~~~bash
 templates/
 ├── admin_login.html
 ├── admin_dash.html
@@ -139,8 +127,7 @@ templates/
 ├── scan.html
 ├── confirm_action.html
 └── ...
-
-```
+~~~
 
 Abgedeckte Bereiche:
 
@@ -156,36 +143,50 @@ Abgedeckte Bereiche:
 
 ### `scripts/`
 
-Hilfsskripte für Setup und Datenmigration.
-
-```
+~~~bash
 scripts/
 ├── run_sql_file.py
 ├── export_users_to_mapping.py
 └── 002_backfill_display_name.py
+~~~
 
-```
+Hilfsskripte für Setup und Datenmigration.
+
 ---
 
 ## Deployment
 
 ### `systemd/`
 
-```
+~~~bash
 systemd/
 └── zvs.service
+~~~
 
-```
 Systemd-Service-Datei zum Betrieb der Anwendung als Linux-Dienst.
 
 ---
 
 ## Installation
 
-```bash
-git clone …
+~~~bash
+git clone <repository-url>
 cd ZVS
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 flask run
+~~~
+
+Hinweis: Datenbank-Konfiguration erfolgt über `.env` basierend auf `config.example.py`.
+
+---
+
+## Lernschwerpunkte & technische Herausforderungen
+
+- Umsetzung einer rollenbasierten Zugriffskontrolle
+- Entwicklung einer konsistenten Ausleih- und Rückgabelogik
+- Trennung von Geschäftslogik und Präsentation
+- Strukturierte Datenbankmodellierung für Zeitschriften und Exemplare
+- Implementierung eines Scan-Workflows mit Bestätigungslogik
+- Wartbare Projektstruktur mit klarer Modultrennung
