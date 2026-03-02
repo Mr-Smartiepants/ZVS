@@ -38,6 +38,7 @@ Das Projekt ist als klassische Flask-Webanwendung aufgebaut mit klarer Trennung 
 
 ### Root-Verzeichnis
 
+```
 ZVS/
 │
 ├── app.py
@@ -53,6 +54,7 @@ ZVS/
 ├── scripts/
 ├── systemd/
 
+```
 ---
 
 ### Zentrale Dateien
@@ -79,11 +81,13 @@ Hilfsfunktionen für sicherheitsrelevante Operationen (z. B. Passwort-Hashing).
 
 Enthält die Flask-Routen und verarbeitet eingehende Requests.
 
+```
 routes/
 ├── init.py
 ├── auth.py
 └── zeitschriften.py
 
+```
 
 - **auth.py**  
   Login-Logik, Authentifizierung und Zugriffskontrolle
@@ -97,6 +101,7 @@ routes/
 
 Kapselt Datenbankoperationen und Fachlogik.
 
+```
 models/
 ├── init.py
 ├── ausleihe.py
@@ -106,6 +111,7 @@ models/
 ├── user_mapping.py
 └── zeitschrift.py
 
+```
 
 - **zeitschrift.py** – Verwaltung von Zeitschriften
 - **exemplar.py** – Verwaltung einzelner Exemplare
@@ -124,6 +130,7 @@ HTML-Templates zur Darstellung der Benutzeroberfläche.
 
 Beispiele:
 
+```
 templates/
 ├── admin_login.html
 ├── admin_dash.html
@@ -133,6 +140,7 @@ templates/
 ├── confirm_action.html
 └── ...
 
+```
 
 Abgedeckte Bereiche:
 
@@ -150,35 +158,34 @@ Abgedeckte Bereiche:
 
 Hilfsskripte für Setup und Datenmigration.
 
+```
 scripts/
 ├── run_sql_file.py
 ├── export_users_to_mapping.py
 └── 002_backfill_display_name.py
 
+```
 ---
 
 ## Deployment
 
 ### `systemd/`
 
+```
 systemd/
 └── zvs.service
 
+```
 Systemd-Service-Datei zum Betrieb der Anwendung als Linux-Dienst.
 
----
-
-## Dokumentation
-
-### `Dokumentation/`
-
-Enthält Projektdokumente und begleitende Unterlagen.
 ---
 
 ## Installation
 
 ```bash
-git clone ...
-cd zvs
+git clone …
+cd ZVS
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 flask run
