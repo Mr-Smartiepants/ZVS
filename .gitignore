@@ -1,46 +1,4 @@
-# Byte-compiled / cache files
-__pycache__/
-*.py[cod]
-*$py.class
+.env 
+.code-workspace
 
-# Virtual environments
-venv/
-.venv/
-env/
-.env/
-ENV/
-user_mapping.csv
-.env
-
-# Packaging / distribution
-build/
-dist/
-*.egg-info/
-.eggs/
-.python-version
-
-# Logs and coverage
-*.log
-.coverage
-coverage.xml
-htmlcov/
-
-# Testing cache
-.pytest_cache/
-
-# Databases
-*.sqlite3
-*.db
-
-# OS / editor metadata
-.DS_Store
-.vscode/
-.idea/
-
-*.code-workspace
-*.md
-log.txt
-Dokumentation/
-
-config.py
-
+venv
